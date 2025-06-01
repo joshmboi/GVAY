@@ -347,7 +347,7 @@ class Trainer:
 
             if i % consts.ITERS_PER_EVAL == 0:
                 print("Evaluating...")
-                self.sim_n_rolls(1, max_ep_len, render=True)
+                self.sim_n_rolls(5, max_ep_len, render=True)
 
             if i % consts.SAVE_EVERY == 0:
                 print("Saving...")
