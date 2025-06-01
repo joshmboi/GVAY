@@ -121,11 +121,7 @@ class Game:
 
     def player_screen(self):
         return np.transpose(
-            cv2.resize(
-                pygame.surfarray.array3d(self.p_screen),
-                (self.disp_h // 4, self.disp_w // 4),
-                interpolation=cv2.INTER_AREA
-            ),
+            pygame.surfarray.array3d(self.p_screen),
             (1, 0, 2),
         ).copy()
 

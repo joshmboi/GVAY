@@ -45,6 +45,7 @@ class Trainer:
 
             if render:
                 frames.append(self.game.player_screen())
+                print(self.game.player_screen().shape)
 
             ob, ac_idx, ac_pos, rew, done, info = self.game.step(eps=self.eps)
             self.eps = max(self.eps - self.eps_decay, 0.1)
@@ -330,8 +331,6 @@ class Trainer:
             self, num_iters, num_train_steps, batch_min_steps, max_ep_len
     ):
         self.tot_steps = 0
-
-        self.sim_roll(1800, 0.0, True)
 
         for i in range(num_iters):
             print(f"Iteration {i}")
