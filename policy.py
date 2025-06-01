@@ -63,9 +63,9 @@ class Policy:
             ob = self.make_device_tensor(ob).unsqueeze(0).unsqueeze(0) / 255.0
 
             # get embed and position
-            p_embed, ac_pos, (
-                ac_pos_means, ac_pos_stds
-            ), self.actor_hidden = self.actor(ob, self.actor_hidden)
+            p_embed, ac_pos, _, self.actor_hidden = self.actor(
+                ob, self.actor_hidden
+            )
 
             # get logits and probabilities
             sim_logits = self.ac_embed(p_embed)
@@ -81,10 +81,6 @@ class Policy:
 
             # sample from policy and get embed
             ac_idx = probs.multinomial(1).item()
-
-            # sample position and clamp
-            dist = torch.distributions.Normal(ac_pos_means, ac_pos_stds)
-            ac_pos = torch.clamp(dist.sample(), 0.0, 1.0)
 
         return ac_idx, ac_pos.squeeze(0).cpu().numpy()
 
@@ -184,6 +180,7 @@ class Policy:
         log_probs_embed = -sim_logits.logsumexp(dim=-1)
 
         # ac_pos entropy (Gaussian)
+        print(ac_pos_means.mean().item(), ac_pos_stds.mean().item())
         dist = torch.distributions.Normal(ac_pos_means, ac_pos_stds)
         log_probs_pos = dist.log_prob(ac_poses).sum(dim=-1)
 
