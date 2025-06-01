@@ -6,6 +6,12 @@ __pycache__/
 # C extensions
 *.so
 
+# Don't save videos and runs
+sac_*
+
+# Mac
+.DS_Store
+
 # Distribution / packaging
 .Python
 build/

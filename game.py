@@ -1,5 +1,4 @@
 import numpy as np
-import copy
 import cv2
 import math
 import os
@@ -11,7 +10,8 @@ from agent import Agent
 
 class Game:
     def __init__(
-            self, training=False, disp_w=consts.DISP_W, disp_h=consts.DISP_H
+        self, training=False, ac_mask=None,
+        disp_w=consts.DISP_W, disp_h=consts.DISP_H
     ):
         # set dummy sound output
         os.environ["SDL_AUDIODRIVER"] = "dummy"
@@ -25,6 +25,9 @@ class Game:
 
         if self.training:
             os.environ["SDL_VIDEODRIVER"] = "dummy"
+
+        # action mask for curriculum training
+        self.ac_mask = ac_mask
 
         # init players
         self.player = Agent(
@@ -125,10 +128,6 @@ class Game:
             ),
             (1, 0, 2),
         ).copy()
-        print(np.transpose(
-                pygame.surfarray.array3d(self.p_screen),
-                (1, 0, 2)
-        ).copy().shape)
 
     def agent_ob(self, screen):
         return np.transpose(
@@ -186,8 +185,12 @@ class Game:
         # get action and take it if acting frame
         if self.frame % consts.FPA == 0 and self.frame >= consts.WINDOW:
             # poll policy
-            p_ac_idx, p_ac_pos = self.player.policy.get_action(self.p_ob, eps)
-            e_ac_idx, e_ac_pos = self.enemy.policy.get_action(self.e_ob, 0)
+            p_ac_idx, p_ac_pos = self.player.policy.get_action(
+                self.p_ob, self.ac_mask, eps
+            )
+            e_ac_idx, e_ac_pos = self.enemy.policy.get_action(
+                self.e_ob, self.ac_mask, 0
+            )
 
             # take action
             if not playing:

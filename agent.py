@@ -58,7 +58,9 @@ class Agent:
         # stamina and health
         self.max_stam = 100
         self.stam = self.max_stam
-        self.stam_reg = 2
+
+        # set to max to refill each frame so no mana limits
+        self.stam_reg = self.max_stam  # 2
 
         self.max_health = 200
         self.health = self.max_health

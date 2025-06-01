@@ -72,6 +72,16 @@ class Policy:
 
             # get logits and probabilities
             sim_logits = self.ac_embed(p_embed)
+
+            # mask out any actions
+            if ac_mask:
+                sim_logits = sim_logits.masked_fill(
+                    torch.tensor(
+                        ac_mask, dtype=torch.bool
+                    ).to(self.device),
+                    -1e9
+                )
+
             probs = F.softmax(sim_logits, dim=-1)
 
             # sample from policy and get embed
@@ -83,7 +93,7 @@ class Policy:
 
         return ac_idx, ac_pos.squeeze(0).cpu().numpy()
 
-    def update_critic(self, batch, gamma=0.99, tau=0.005):
+    def update_critic(self, batch, ac_mask, gamma=0.99, tau=0.005):
         # break open batch
         obs, ac_idxs, ac_poses, rews, nobs, dones = batch
 
@@ -100,6 +110,16 @@ class Policy:
 
             # get similarities and associated probabilities
             sim_logits_nexts = self.ac_embed(p_embed_nexts)
+
+            # mask out invalid actions
+            if ac_mask:
+                sim_logits_nexts = sim_logits_nexts.masked_fill(
+                    torch.tensor(
+                        ac_mask, dtype=torch.bool
+                    ).to(self.device),
+                    -1e9
+                )
+
             prob_nexts = F.softmax(sim_logits_nexts, dim=-1)
 
             ac_embed_nexts = (

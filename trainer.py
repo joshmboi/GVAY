@@ -8,7 +8,7 @@ from logger import Logger
 
 class Trainer:
     def __init__(self):
-        self.game = Game(True)
+        self.game = Game(True, ac_mask=[1, 1, 0, 1, 0])
 
         self.tot_steps = 0
         self.rebuff = ReplayBuffer(consts.REBUFF_SIZE)
@@ -326,6 +326,7 @@ class Trainer:
             print(f"Iteration {i}")
             print(f"Total Steps: {self.tot_steps}")
             print("Collecting Rollouts...")
+
             # simulate rollouts until minimum batch number of steps
             rolls, iter_steps = self.sim_rolls(batch_min_steps, max_ep_len)
             self.tot_steps += iter_steps
@@ -350,8 +351,8 @@ class Trainer:
                 print()
 
 
-# trainer = Trainer()
-# trainer.run_training(1000, consts.TRAIN_STEPS, 10000, 1800)
-game = Game()
-game.reset()
-game.run()
+trainer = Trainer()
+trainer.run_training(1000, consts.TRAIN_STEPS, 10000, 1800)
+# game = Game()
+# game.reset()
+# game.run()
