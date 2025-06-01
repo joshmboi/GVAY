@@ -1,6 +1,5 @@
 import copy
 import torch
-import numpy as np
 import torch.optim as optim
 import torch.nn.functional as F
 
@@ -54,13 +53,7 @@ class Policy:
         with torch.no_grad():
             _, _, _, self.actor_hidden = self.actor(ob, self.actor_hidden)
 
-    def get_action(self, ob, ac_mask, eps=0.0):
-        if np.random.rand() < eps:
-            return (
-                    np.random.randint(0, 5),
-                    np.random.rand(2).astype(np.float32)
-            )
-
+    def get_action(self, ob, ac_mask):
         # so no gradients are calculated
         with torch.no_grad():
             ob = self.make_device_tensor(ob).unsqueeze(0).unsqueeze(0) / 255.0

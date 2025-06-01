@@ -18,9 +18,6 @@ class Trainer:
         self.train_step = 0
         self.eval_step = 0
 
-        self.eps = 1.0
-        self.eps_decay = 0.9 / 10000000
-
     def sim_roll(self, max_ep_len=1800, eps=0, render=False):
         # initialize steps and frames
         steps = 0
@@ -46,8 +43,7 @@ class Trainer:
             if render:
                 frames.append(self.game.player_screen())
 
-            ob, ac_idx, ac_pos, rew, done, info = self.game.step(eps=self.eps)
-            self.eps = max(self.eps - self.eps_decay, 0.1)
+            ob, ac_idx, ac_pos, rew, done, info = self.game.step()
 
             if ac_idx is not None or ac_pos is not None:
                 # add actions

@@ -151,7 +151,7 @@ class Game:
 
         return rew
 
-    def step(self, eps=0, playing=False):
+    def step(self, playing=False):
         # check to see if window was closed
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -182,10 +182,10 @@ class Game:
         if self.frame % consts.FPA == 0 and self.frame >= consts.WINDOW:
             # poll policy
             p_ac_idx, p_ac_pos = self.player.policy.get_action(
-                self.p_ob, self.ac_mask, eps
+                self.p_ob, self.ac_mask
             )
             e_ac_idx, e_ac_pos = self.enemy.policy.get_action(
-                self.e_ob, self.ac_mask, 0
+                self.e_ob, self.ac_mask
             )
 
             # take action

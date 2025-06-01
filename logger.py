@@ -8,6 +8,7 @@ import time
 class Logger:
     def __init__(self, log_dir="runs", name="default"):
         timestamp = time.strftime("%Y%m%d-%H%M%S")
+        print(timestamp)
         self.log_path = os.path.join(log_dir, f"{name}_{timestamp}")
         self.writer = SummaryWriter(self.log_path)
 
