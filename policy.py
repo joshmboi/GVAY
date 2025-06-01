@@ -38,7 +38,7 @@ class Policy:
 
         self.log_alpha = torch.tensor(0.0, requires_grad=True, device=device)
         if player:
-            self.alpha_optimizer = optim.Adam([self.log_alpha], lr=3e-4)
+            self.alpha_optimizer = optim.Adam([self.log_alpha], lr=1e-2)
             self.target_entropy = -7.0 / 2
 
     def make_device_tensor(self, arr):
@@ -185,6 +185,7 @@ class Policy:
 
         # total entropy
         entropy = log_probs_embed + log_probs_pos
+        entropy = entropy
 
         # alpha loss
         alpha_loss = -(

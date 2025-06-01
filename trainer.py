@@ -172,7 +172,9 @@ class Trainer:
         for i in range(num_train_steps):
             batch = self.rebuff.sample(consts.BATCH_SIZE)
 
-            c_metrics = self.game.player.policy.update_critic(batch)
+            c_metrics = self.game.player.policy.update_critic(
+                batch, [1, 1, 0, 1, 0]
+            )
             a_metrics = self.game.player.policy.update_actor(batch)
 
             c_losses.append(c_metrics["critic_loss"])
