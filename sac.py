@@ -69,16 +69,16 @@ class Actor(nn.Module):
         ac_embed = self.ac_embed(last_out)
 
         # sample position of action
-        ac_pos_mean = torch.sigmoid(self.ac_pos_mean(last_out))
+        ac_pos_mean = self.ac_pos_mean(last_out)
         ac_pos_std = torch.exp(
-            torch.clamp(self.ac_pos_logstd(last_out), -4, 0.5)
+            torch.clamp(self.ac_pos_logstd(last_out), -2, 0.4)
         )
 
         # noise
         ac_pos_eps = torch.randn_like(ac_pos_std)
-        ac_pos = torch.clamp(ac_pos_mean + ac_pos_std * ac_pos_eps, 0.0, 1.0)
+        ac_pos_raw = ac_pos_mean + ac_pos_std * ac_pos_eps
 
-        return ac_embed, ac_pos, (ac_pos_mean, ac_pos_std), hidden
+        return ac_embed, ac_pos_raw, (ac_pos_mean, ac_pos_std), hidden
 
 
 class Critic(nn.Module):

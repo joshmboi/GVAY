@@ -63,7 +63,7 @@ class Policy:
             ob = self.make_device_tensor(ob).unsqueeze(0).unsqueeze(0) / 255.0
 
             # get embed and position
-            p_embed, ac_pos, _, self.actor_hidden = self.actor(
+            p_embed, ac_pos_raw, _, self.actor_hidden = self.actor(
                 ob, self.actor_hidden
             )
 
@@ -82,7 +82,7 @@ class Policy:
             # sample from policy and get embed
             ac_idx = probs.multinomial(1).item()
 
-        return ac_idx, ac_pos.squeeze(0).cpu().numpy()
+        return ac_idx, torch.sigmoid(ac_pos_raw).squeeze(0).cpu().numpy()
 
     def update_critic(self, batch, ac_mask, gamma=0.99, tau=0.005):
         # break open batch
@@ -97,7 +97,7 @@ class Policy:
 
         with torch.no_grad():
             # get next actions, observation embeddings, and q values
-            p_embed_nexts, pos_nexts, _, _ = self.actor(nobs)
+            p_embed_nexts, pos_next_raws, _, _ = self.actor(nobs)
 
             # get similarities and associated probabilities
             sim_logits_nexts = self.ac_embed(p_embed_nexts)
@@ -118,7 +118,9 @@ class Policy:
                 prob_nexts.unsqueeze(-1) * self.ac_embed.embedding.weight
             ).sum(dim=1)
 
-            ac_nexts = torch.cat([ac_embed_nexts, pos_nexts], dim=-1)
+            ac_nexts = torch.cat(
+                [ac_embed_nexts, torch.sigmoid(pos_next_raws)], dim=-1
+            )
 
             # calculate q values and target values
             q_nexts, _ = self.target_critic(nobs, ac_nexts)
@@ -159,10 +161,10 @@ class Policy:
         obs = self.make_device_tensor(obs) / 255.0
 
         # get actions
-        ac_embeds, ac_poses, (
+        ac_embeds, ac_pos_raws, (
             ac_pos_means, ac_pos_stds
         ), _ = self.actor(obs)
-        acs = torch.cat([ac_embeds, ac_poses], dim=-1)
+        acs = torch.cat([ac_embeds, torch.sigmoid(ac_pos_raws)], dim=-1)
 
         # get q value using current critic
         qs, _ = self.critic(obs, acs)
@@ -180,9 +182,8 @@ class Policy:
         log_probs_embed = -sim_logits.logsumexp(dim=-1)
 
         # ac_pos entropy (Gaussian)
-        print(ac_pos_means.mean().item(), ac_pos_stds.mean().item())
         dist = torch.distributions.Normal(ac_pos_means, ac_pos_stds)
-        log_probs_pos = dist.log_prob(ac_poses).sum(dim=-1)
+        log_probs_pos = dist.log_prob(ac_pos_raws).sum(dim=-1)
 
         # total entropy
         entropy = log_probs_embed + log_probs_pos
