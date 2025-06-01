@@ -92,7 +92,7 @@ class Game:
         # take damage from damage zone
         sc = damager.scorch
         if (sc and
-            math.hypot(damagee.x - sc.x, damagee.y - damagee.y) <=
+            math.hypot(damagee.x - sc.x, damagee.y - sc.y) <=
                 damagee.rad + sc.rad):
             damage_taken += damagee.take_damage(sc.damage())
 
