@@ -187,7 +187,7 @@ class Trainer:
                 q_min = min(q_min, c_metrics["q_val_min"])
                 q_max = max(q_max, c_metrics["q_val_max"])
 
-            if self.iters < consts.CRITIC_ONLY:
+            if self.iters >= consts.CRITIC_ONLY:
                 a_metrics = self.game.player.policy.update_actor(batch)
 
                 a_losses.append(a_metrics["actor_loss"])
@@ -242,7 +242,7 @@ class Trainer:
             self.train_step
         )
 
-        if self.iters > consts.CRITIC_ONLY:
+        if self.iters >= consts.CRITIC_ONLY:
             self.logger.log_scalar(
                 "Mean Actor Loss",
                 sum(a_losses) / num_train_steps,
@@ -304,7 +304,7 @@ class Trainer:
         print(f"Highest Q Value: {q_max}")
         print(f"Lowest Q Value: {q_min}")
 
-        if self.iters > consts.CRITIC_ONLY:
+        if self.iters >= consts.CRITIC_ONLY:
             print(f"Mean Actor Loss: {sum(a_losses) / num_train_steps}")
             print(f"Highest Actor Loss: {a_loss_max}")
             print(f"Lowest Actor Loss: {a_loss_min}")
