@@ -187,8 +187,6 @@ class Policy:
         dist = torch.distributions.Normal(ac_pos_means, ac_pos_stds)
         log_probs_pos = dist.log_prob(ac_poses).sum(dim=-1)
 
-        print(log_probs_embed, log_probs_pos)
-
         # total entropy
         entropy = log_probs_embed + log_probs_pos
         entropy = entropy
