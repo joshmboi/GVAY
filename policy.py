@@ -1,4 +1,5 @@
 import copy
+import numpy as np
 import torch
 import torch.optim as optim
 import torch.nn.functional as F
@@ -35,7 +36,10 @@ class Policy:
                 self.ac_embed.parameters(), lr=lr
             )
 
-        self.log_alpha = torch.tensor(0.0, requires_grad=True, device=device)
+        # alpha for entropy control
+        self.log_alpha = torch.tensor(
+            np.log(0.1), requires_grad=True, device=device
+        )
         if player:
             self.alpha_optimizer = optim.Adam([self.log_alpha], lr=lr)
             self.target_entropy = -7.0 / 2
@@ -67,7 +71,7 @@ class Policy:
             sim_logits = self.ac_embed(p_embed)
 
             # mask out any actions
-            if ac_mask:
+            if ac_mask is not None:
                 ac_mask_tensor = torch.as_tensor(
                     ac_mask, dtype=torch.bool, device=self.device
                 ).unsqueeze(0)
@@ -103,7 +107,7 @@ class Policy:
             sim_logits_nexts = self.ac_embed(p_embed_nexts)
 
             # mask out invalid actions
-            if ac_mask:
+            if ac_mask is not None:
                 ac_mask_tensor = torch.as_tensor(
                     ac_mask, dtype=torch.bool, device=self.device
                 ).unsqueeze(0)
@@ -152,7 +156,7 @@ class Policy:
         }
         return metric
 
-    def update_actor(self, batch, alpha=0.2):
+    def update_actor(self, batch, ac_mask):
         # break open batch
         obs, _, _, _, _, _ = batch
 
@@ -169,11 +173,21 @@ class Policy:
 
         # ac_embeds entropy
         sim_logits = self.ac_embed(ac_embeds)
+
+        # mask out actions cannot take
+        if ac_mask is not None:
+            ac_mask_tensor = torch.as_tensor(
+                ac_mask, dtype=torch.bool, device=self.device
+            ).unsqueeze(0)
+            sim_logits = sim_logits.masked_fill(~ac_mask_tensor, -1e9)
+
         log_probs_embed = -sim_logits.logsumexp(dim=-1)
 
         # ac_pos entropy (Gaussian)
         dist = torch.distributions.Normal(ac_pos_means, ac_pos_stds)
         log_probs_pos = dist.log_prob(ac_poses).sum(dim=-1)
+
+        print(log_probs_embed, log_probs_pos)
 
         # total entropy
         entropy = log_probs_embed + log_probs_pos

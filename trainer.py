@@ -8,7 +8,8 @@ from logger import Logger
 
 class Trainer:
     def __init__(self):
-        self.game = Game(True, ac_mask=[1, 1, 0, 1, 0])
+        self.ac_mask = [1, 1, 0, 1, 0]
+        self.game = Game(True, ac_mask=self.ac_mask)
 
         self.tot_steps = 0
         self.rebuff = ReplayBuffer(consts.REBUFF_SIZE)
@@ -170,7 +171,7 @@ class Trainer:
             batch = self.rebuff.sample(consts.BATCH_SIZE)
 
             c_metrics = self.game.player.policy.update_critic(
-                batch, [1, 1, 0, 1, 0]
+                batch, ac_mask=self.ac_mask
             )
 
             c_losses.append(c_metrics["critic_loss"])
@@ -188,7 +189,9 @@ class Trainer:
                 q_max = max(q_max, c_metrics["q_val_max"])
 
             if self.iters >= consts.CRITIC_ONLY:
-                a_metrics = self.game.player.policy.update_actor(batch)
+                a_metrics = self.game.player.policy.update_actor(
+                    batch, ac_mask=self.ac_mask
+                )
 
                 a_losses.append(a_metrics["actor_loss"])
                 alphs.append(a_metrics["alpha"])
