@@ -78,7 +78,7 @@ class Policy:
                 ac_mask_tensor = torch.as_tensor(
                     ac_mask, dtype=torch.bool, device=self.device
                 ).unsqueeze(0)
-                sim_logits = sim_logits.masked_fill(ac_mask_tensor, -1e9)
+                sim_logits = sim_logits.masked_fill(~ac_mask_tensor, -1e9)
 
             probs = F.softmax(sim_logits, dim=-1)
 
@@ -115,7 +115,7 @@ class Policy:
                     ac_mask, dtype=torch.bool, device=self.device
                 ).unsqueeze(0)
                 sim_logits_nexts = sim_logits_nexts.masked_fill(
-                    ac_mask_tensor,
+                    ~ac_mask_tensor,
                     -1e9
                 )
 

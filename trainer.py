@@ -14,6 +14,7 @@ class Trainer:
         self.rebuff = ReplayBuffer(consts.REBUFF_SIZE)
 
         self.logger = Logger(name="sac")
+        self.iters = 0
         self.train_step = 0
         self.eval_step = 0
 
@@ -175,37 +176,43 @@ class Trainer:
             c_metrics = self.game.player.policy.update_critic(
                 batch, [1, 1, 0, 1, 0]
             )
-            a_metrics = self.game.player.policy.update_actor(batch)
 
             c_losses.append(c_metrics["critic_loss"])
             q_vals.append(c_metrics["q_values"])
-            a_losses.append(a_metrics["actor_loss"])
-            alphs.append(a_metrics["alpha"])
-            entropies.append(a_metrics["entropy"])
-            alph_losses.append(a_metrics["alpha_loss"])
 
             if not c_loss_min:
                 c_loss_min = c_metrics["critic_loss"]
                 c_loss_max = c_metrics["critic_loss"]
-                a_loss_min = a_metrics["actor_loss"]
-                a_loss_max = a_metrics["actor_loss"]
                 q_min = c_metrics["q_val_min"]
                 q_max = c_metrics["q_val_max"]
-                entropy_min = a_metrics["entropy"]
-                entropy_max = a_metrics["entropy"]
-                alph_min = a_metrics["alpha_loss"]
-                alph_max = a_metrics["alpha_loss"]
             else:
                 c_loss_min = min(c_loss_min, c_metrics["critic_loss"])
                 c_loss_max = max(c_loss_max, c_metrics["critic_loss"])
-                a_loss_min = min(a_loss_min, a_metrics["actor_loss"])
-                a_loss_max = max(a_loss_max, a_metrics["actor_loss"])
                 q_min = min(q_min, c_metrics["q_val_min"])
                 q_max = max(q_max, c_metrics["q_val_max"])
-                entropy_min = min(entropy_min, a_metrics["entropy"])
-                entropy_max = max(entropy_max, a_metrics["entropy"])
-                alph_min = min(alph_min, a_metrics["alpha_loss"])
-                alph_max = max(alph_max, a_metrics["alpha_loss"])
+
+            if self.iters < consts.CRITIC_ONLY:
+                a_metrics = self.game.player.policy.update_actor(batch)
+
+                a_losses.append(a_metrics["actor_loss"])
+                alphs.append(a_metrics["alpha"])
+                entropies.append(a_metrics["entropy"])
+                alph_losses.append(a_metrics["alpha_loss"])
+
+                if not a_loss_min:
+                    a_loss_min = a_metrics["actor_loss"]
+                    a_loss_max = a_metrics["actor_loss"]
+                    entropy_min = a_metrics["entropy"]
+                    entropy_max = a_metrics["entropy"]
+                    alph_min = a_metrics["alpha_loss"]
+                    alph_max = a_metrics["alpha_loss"]
+                else:
+                    a_loss_min = min(a_loss_min, a_metrics["actor_loss"])
+                    a_loss_max = max(a_loss_max, a_metrics["actor_loss"])
+                    entropy_min = min(entropy_min, a_metrics["entropy"])
+                    entropy_max = max(entropy_max, a_metrics["entropy"])
+                    alph_min = min(alph_min, a_metrics["alpha_loss"])
+                    alph_max = max(alph_max, a_metrics["alpha_loss"])
 
         self.logger.log_scalar(
             "Mean Critic Loss",
@@ -220,22 +227,6 @@ class Trainer:
         self.logger.log_scalar(
             "Lowest Critic Loss",
             c_loss_min,
-            self.train_step
-        )
-
-        self.logger.log_scalar(
-            "Mean Actor Loss",
-            sum(a_losses) / num_train_steps,
-            self.train_step
-        )
-        self.logger.log_scalar(
-            "Highest Actor Loss",
-            a_loss_max,
-            self.train_step
-        )
-        self.logger.log_scalar(
-            "Lowest Actor Loss",
-            a_loss_min,
             self.train_step
         )
 
@@ -255,63 +246,81 @@ class Trainer:
             self.train_step
         )
 
-        self.logger.log_scalar(
-            "Mean Entropy",
-            sum(entropies) / num_train_steps,
-            self.train_step
-        )
-        self.logger.log_scalar(
-            "Highest Entropy",
-            entropy_max,
-            self.train_step
-        )
-        self.logger.log_scalar(
-            "Lowest Entropy",
-            entropy_min,
-            self.train_step
-        )
+        if self.iters > consts.CRITIC_ONLY:
+            self.logger.log_scalar(
+                "Mean Actor Loss",
+                sum(a_losses) / num_train_steps,
+                self.train_step
+            )
+            self.logger.log_scalar(
+                "Highest Actor Loss",
+                a_loss_max,
+                self.train_step
+            )
+            self.logger.log_scalar(
+                "Lowest Actor Loss",
+                a_loss_min,
+                self.train_step
+            )
 
-        self.logger.log_scalar(
-            "Mean Alpha",
-            sum(alphs) / num_train_steps,
-            self.train_step
-        )
-        self.logger.log_scalar(
-            "Mean Alpha Loss",
-            sum(alph_losses) / num_train_steps,
-            self.train_step
-        )
-        self.logger.log_scalar(
-            "Highest Alpha Loss",
-            alph_max,
-            self.train_step
-        )
-        self.logger.log_scalar(
-            "Lowest Alpha Loss",
-            alph_min,
-            self.train_step
-        )
+            self.logger.log_scalar(
+                "Mean Entropy",
+                sum(entropies) / num_train_steps,
+                self.train_step
+            )
+            self.logger.log_scalar(
+                "Highest Entropy",
+                entropy_max,
+                self.train_step
+            )
+            self.logger.log_scalar(
+                "Lowest Entropy",
+                entropy_min,
+                self.train_step
+            )
+
+            self.logger.log_scalar(
+                "Mean Alpha",
+                sum(alphs) / num_train_steps,
+                self.train_step
+            )
+            self.logger.log_scalar(
+                "Mean Alpha Loss",
+                sum(alph_losses) / num_train_steps,
+                self.train_step
+            )
+            self.logger.log_scalar(
+                "Highest Alpha Loss",
+                alph_max,
+                self.train_step
+            )
+            self.logger.log_scalar(
+                "Lowest Alpha Loss",
+                alph_min,
+                self.train_step
+            )
 
         print(f"Mean Critic Loss: {sum(c_losses) / num_train_steps}")
         print(f"Highest Critic Loss: {c_loss_max}")
         print(f"Lowest Critic Loss: {c_loss_min}")
 
-        print(f"Mean Actor Loss: {sum(a_losses) / num_train_steps}")
-        print(f"Highest Actor Loss: {a_loss_max}")
-        print(f"Lowest Actor Loss: {a_loss_min}")
-
         print(f"Mean Q Value: {sum(q_vals) / num_train_steps}")
         print(f"Highest Q Value: {q_max}")
         print(f"Lowest Q Value: {q_min}")
 
-        print(f"Mean Entropy: {sum(entropies) / num_train_steps}")
-        print(f"Highest Entropy: {entropy_max}")
-        print(f"Lowest Entropy: {entropy_min}")
+        if self.iters > consts.CRITIC_ONLY:
+            print(f"Mean Actor Loss: {sum(a_losses) / num_train_steps}")
+            print(f"Highest Actor Loss: {a_loss_max}")
+            print(f"Lowest Actor Loss: {a_loss_min}")
 
-        print(f"Mean Alpha: {sum(alphs) / num_train_steps}")
-        print(f"Mean Alpha Loss: {sum(alph_losses) / num_train_steps}")
-        print(f"Highest Alpha Loss: {alph_max}")
-        print(f"Lowest Alpha Loss: {alph_min}")
+            print(f"Mean Entropy: {sum(entropies) / num_train_steps}")
+            print(f"Highest Entropy: {entropy_max}")
+            print(f"Lowest Entropy: {entropy_min}")
+
+            print(f"Mean Alpha: {sum(alphs) / num_train_steps}")
+            print(f"Mean Alpha Loss: {sum(alph_losses) / num_train_steps}")
+            print(f"Highest Alpha Loss: {alph_max}")
+            print(f"Lowest Alpha Loss: {alph_min}")
 
         print()
 
@@ -340,17 +349,19 @@ class Trainer:
 
             if i % consts.ITERS_PER_EVAL == 0:
                 print("Evaluating...")
-                self.sim_n_rolls(5, max_ep_len, render=True)
+                self.sim_n_rolls(1, max_ep_len, render=True)
 
             if i % consts.SAVE_EVERY == 0:
                 print("Saving...")
                 self.logger.save_models(self.game.player, self.game.enemy, i)
                 print()
 
-            if i % consts.ENEMY_UPDATE == 0:
+            if i % consts.ENEMY_UPDATE == 0 and i != 0:
                 print("Updating Enemy...")
                 self.game.enemy.policy.update_policy(self.game.player.policy)
                 print()
+
+            self.iters += 1
 
 
 trainer = Trainer()

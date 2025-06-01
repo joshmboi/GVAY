@@ -14,9 +14,10 @@ BATCH_SIZE = 500
 
 # number of iterations for things
 ITERS_PER_EVAL = 20
-SAVE_EVERY = 100
+SAVE_EVERY = 50
 ENEMY_UPDATE = 100
 TRAIN_STEPS = 10
+CRITIC_ONLY = 20
 
 # colors
 WHITE = (255, 255, 255)
