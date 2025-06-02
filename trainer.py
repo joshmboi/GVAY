@@ -333,6 +333,9 @@ class Trainer:
             print(f"Alpha/Mean Value: {sum(alphs) / num_train_steps}")
             print(f"Alpha/Mean Loss: {sum(alph_losses) / num_train_steps}")
 
+            print(f"Position/Means: {sum(pos_means) / num_train_steps}")
+            print(f"Position/Stds: {sum(pos_stds) / num_train_steps}")
+
         print()
 
         self.train_step += 1
