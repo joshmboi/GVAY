@@ -212,8 +212,6 @@ class Policy:
             "alpha_loss": alpha_loss.item(),
             "entropy": entropy.mean().item(),
             "means": ac_pos_means.mean().item(),
-            "stds": ac_pos_stds.mean().item(),
-            "mean_grads": ac_pos_means.grad.mean().item(),
-            "std_grads": ac_pos_stds.grad.mean().item()
+            "stds": ac_pos_stds.mean().item()
         }
         return metric

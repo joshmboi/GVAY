@@ -148,7 +148,7 @@ class Game:
         # encourage playing in the center
         rew -= math.hypot(
             player.x - self.disp_w // 2, player.y - self.disp_h
-        ) * 0.4
+        ) * 0.001
 
         # rew -= (player.max_stam - player.stam) * 0.0001
 
