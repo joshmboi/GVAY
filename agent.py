@@ -47,12 +47,12 @@ class Agent:
         self.w_cast_dist = 200
         self.w_rad = 60
         self.w_duration = 2000
-        self.w_stam = 25
+        self.w_stam = 20
 
         self.e_cool = 5000
         self.e_last_cast = -self.e_cool
         self.e_duration = 1000
-        self.e_stam = 40
+        self.e_stam = 35
         self.shield_val = 0
 
         # stamina and health
