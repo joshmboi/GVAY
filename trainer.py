@@ -110,25 +110,25 @@ class Trainer:
 
         # log return stats
         self.logger.log_scalar(
-            "Sim/Mean Return:",
+            "Eval/Mean Return:",
             sum(rews) / len(rews),
             self.eval_step
         )
         self.logger.log_scalar(
-            "Sim/Max Return:",
+            "Eval/Max Return:",
             max(rews),
             self.eval_step
         )
         self.logger.log_scalar(
-            "Sim/Min Return:",
+            "Eval/Min Return:",
             min(rews),
             self.eval_step
         )
 
         # print out return stats
-        print(f"Sim/Mean Return: {sum(rews) / len(rews)}")
-        print(f"Sim/Max Return: {max(rews)}")
-        print(f"Sim/Min Return: {min(rews)}")
+        print(f"Eval/Mean Return: {sum(rews) / len(rews)}")
+        print(f"Eval/Max Return: {max(rews)}")
+        print(f"Eval/Min Return: {min(rews)}")
         print()
 
         self.eval_step += 1
@@ -153,25 +153,25 @@ class Trainer:
 
         # log return stats
         self.logger.log_scalar(
-            "Eval/Mean Return:",
+            "Sim/Mean Return:",
             sum(rews) / len(rews),
             self.eval_step
         )
         self.logger.log_scalar(
-            "Eval/Max Return:",
+            "Sim/Max Return:",
             max(rews),
             self.eval_step
         )
         self.logger.log_scalar(
-            "Eval/Min Return:",
+            "Sim/Min Return:",
             min(rews),
             self.eval_step
         )
 
         # print out return stats
-        print(f"Eval/Mean Return: {sum(rews) / len(rews)}")
-        print(f"Eval/Max Return: {max(rews)}")
-        print(f"Eval/Min Return: {min(rews)}")
+        print(f"Sim/Mean Return: {sum(rews) / len(rews)}")
+        print(f"Sim/Max Return: {max(rews)}")
+        print(f"Sim/Min Return: {min(rews)}")
         print()
 
         return rolls, iter_steps
