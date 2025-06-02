@@ -108,10 +108,27 @@ class Trainer:
 
             rews.append(sum(p_roll.rewards))
 
-        # print return stats
-        print(f"Eval Mean Return: {sum(rews) / len(rews)}")
-        print(f"Eval Max Return: {max(rews)}")
-        print(f"Eval Min Return: {min(rews)}")
+        # log return stats
+        self.logger.log_scalar(
+            "Sim/Mean Return:",
+            sum(rews) / len(rews),
+            self.eval_step
+        )
+        self.logger.log_scalar(
+            "SimMax Return:",
+            max(rews),
+            self.eval_step
+        )
+        self.logger.log_scalar(
+            "SimMin Return:",
+            min(rews),
+            self.eval_step
+        )
+
+        # print out return stats
+        print(f"Sim/Mean Return: {sum(rews) / len(rews)}")
+        print(f"Sim/Max Return: {max(rews)}")
+        print(f"Sim/Min Return: {min(rews)}")
         print()
 
         self.eval_step += 1
@@ -136,25 +153,25 @@ class Trainer:
 
         # log return stats
         self.logger.log_scalar(
-            "Eval Mean Return:",
+            "Eval/Mean Return:",
             sum(rews) / len(rews),
             self.eval_step
         )
         self.logger.log_scalar(
-            "Eval Max Return:",
+            "Eval/Max Return:",
             max(rews),
             self.eval_step
         )
         self.logger.log_scalar(
-            "Eval Min Return:",
+            "Eval/Min Return:",
             min(rews),
             self.eval_step
         )
 
         # print out return stats
-        print(f"Eval Mean Return: {sum(rews) / len(rews)}")
-        print(f"Eval Max Return: {max(rews)}")
-        print(f"Eval Min Return: {min(rews)}")
+        print(f"Eval/Mean Return: {sum(rews) / len(rews)}")
+        print(f"Eval/Max Return: {max(rews)}")
+        print(f"Eval/Min Return: {min(rews)}")
         print()
 
         return rolls, iter_steps
@@ -162,10 +179,9 @@ class Trainer:
     def train(self, num_train_steps):
         # initialize metrics tracking
         c_losses, q_vals, a_losses = [], [], []
-        alphs, entropies, alph_losses = [], [], []
+        alphs, entropies, alph_losses, pos_means, pos_stds = [], [], [], [], []
         c_loss_min, c_loss_max, a_loss_min, a_loss_max = None, None, None, None
         q_max, q_min, entropy_min, entropy_max = None, None, None, None
-        alph_max, alph_min = None, None
 
         for i in range(num_train_steps):
             batch = self.rebuff.sample(consts.BATCH_SIZE)
@@ -197,129 +213,125 @@ class Trainer:
                 alphs.append(a_metrics["alpha"])
                 entropies.append(a_metrics["entropy"])
                 alph_losses.append(a_metrics["alpha_loss"])
+                pos_means.append(a_metrics["means"])
+                pos_stds.append(a_metrics["stds"])
 
                 if not a_loss_min:
                     a_loss_min = a_metrics["actor_loss"]
                     a_loss_max = a_metrics["actor_loss"]
                     entropy_min = a_metrics["entropy"]
                     entropy_max = a_metrics["entropy"]
-                    alph_min = a_metrics["alpha_loss"]
-                    alph_max = a_metrics["alpha_loss"]
                 else:
                     a_loss_min = min(a_loss_min, a_metrics["actor_loss"])
                     a_loss_max = max(a_loss_max, a_metrics["actor_loss"])
                     entropy_min = min(entropy_min, a_metrics["entropy"])
-                    entropy_max = max(entropy_max, a_metrics["entropy"])
-                    alph_min = min(alph_min, a_metrics["alpha_loss"])
-                    alph_max = max(alph_max, a_metrics["alpha_loss"])
 
         self.logger.log_scalar(
-            "Mean Critic Loss",
+            "Critic/Mean Loss",
             sum(c_losses) / num_train_steps,
             self.train_step
         )
         self.logger.log_scalar(
-            "Highest Critic Loss",
+            "Critic/Highest Loss",
             c_loss_max,
             self.train_step
         )
         self.logger.log_scalar(
-            "Lowest Critic Loss",
+            "Critic/Lowest Loss",
             c_loss_min,
             self.train_step
         )
 
         self.logger.log_scalar(
-            "Mean Q Value",
+            "Q/Mean Value",
             sum(q_vals) / num_train_steps,
             self.train_step
         )
         self.logger.log_scalar(
-            "Highest Q Value",
+            "Q/Highest Value",
             q_max,
             self.train_step
         )
         self.logger.log_scalar(
-            "Lowest Q Value",
+            "Q/Lowest Value",
             q_min,
             self.train_step
         )
 
         if self.iters >= consts.CRITIC_ONLY:
             self.logger.log_scalar(
-                "Mean Actor Loss",
+                "Actor/Mean Loss",
                 sum(a_losses) / num_train_steps,
                 self.train_step
             )
             self.logger.log_scalar(
-                "Highest Actor Loss",
+                "Actor/Highest Loss",
                 a_loss_max,
                 self.train_step
             )
             self.logger.log_scalar(
-                "Lowest Actor Loss",
+                "Actor/Lowest Loss",
                 a_loss_min,
                 self.train_step
             )
 
             self.logger.log_scalar(
-                "Mean Entropy",
+                "Entropy/Mean",
                 sum(entropies) / num_train_steps,
                 self.train_step
             )
             self.logger.log_scalar(
-                "Highest Entropy",
+                "Entropy/Highest",
                 entropy_max,
                 self.train_step
             )
             self.logger.log_scalar(
-                "Lowest Entropy",
+                "Entropy/Lowest",
                 entropy_min,
                 self.train_step
             )
 
             self.logger.log_scalar(
-                "Mean Alpha",
+                "Alpha/Mean Value",
                 sum(alphs) / num_train_steps,
                 self.train_step
             )
             self.logger.log_scalar(
-                "Mean Alpha Loss",
+                "Alpha/Mean Loss",
                 sum(alph_losses) / num_train_steps,
                 self.train_step
             )
+
             self.logger.log_scalar(
-                "Highest Alpha Loss",
-                alph_max,
+                "Position/Means",
+                pos_means,
                 self.train_step
             )
             self.logger.log_scalar(
-                "Lowest Alpha Loss",
-                alph_min,
+                "Position/Stds",
+                pos_stds,
                 self.train_step
             )
 
-        print(f"Mean Critic Loss: {sum(c_losses) / num_train_steps}")
-        print(f"Highest Critic Loss: {c_loss_max}")
-        print(f"Lowest Critic Loss: {c_loss_min}")
+        print(f"Critic/Mean Loss: {sum(c_losses) / num_train_steps}")
+        print(f"Critic/Highest Loss: {c_loss_max}")
+        print(f"Critic/Lowest Loss: {c_loss_min}")
 
-        print(f"Mean Q Value: {sum(q_vals) / num_train_steps}")
-        print(f"Highest Q Value: {q_max}")
-        print(f"Lowest Q Value: {q_min}")
+        print(f"Q/Mean Value: {sum(q_vals) / num_train_steps}")
+        print(f"Q/Highest Value: {q_max}")
+        print(f"Q/Lowest Value: {q_min}")
 
         if self.iters >= consts.CRITIC_ONLY:
-            print(f"Mean Actor Loss: {sum(a_losses) / num_train_steps}")
-            print(f"Highest Actor Loss: {a_loss_max}")
-            print(f"Lowest Actor Loss: {a_loss_min}")
+            print(f"Actor/Mean Loss: {sum(a_losses) / num_train_steps}")
+            print(f"Actor/Highest Loss: {a_loss_max}")
+            print(f"Actor/Lowest Loss: {a_loss_min}")
 
-            print(f"Mean Entropy: {sum(entropies) / num_train_steps}")
-            print(f"Highest Entropy: {entropy_max}")
-            print(f"Lowest Entropy: {entropy_min}")
+            print(f"Entropy/Mean: {sum(entropies) / num_train_steps}")
+            print(f"Entropy/Highest: {entropy_max}")
+            print(f"Entropy/Lowest: {entropy_min}")
 
-            print(f"Mean Alpha: {sum(alphs) / num_train_steps}")
-            print(f"Mean Alpha Loss: {sum(alph_losses) / num_train_steps}")
-            print(f"Highest Alpha Loss: {alph_max}")
-            print(f"Lowest Alpha Loss: {alph_min}")
+            print(f"Alpha/Mean Value: {sum(alphs) / num_train_steps}")
+            print(f"Alpha/Mean Loss: {sum(alph_losses) / num_train_steps}")
 
         print()
 

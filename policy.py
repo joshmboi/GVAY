@@ -164,7 +164,7 @@ class Policy:
         ac_embeds, ac_pos_raws, (
             ac_pos_means, ac_pos_stds
         ), _ = self.actor(obs)
-        acs = torch.cat([ac_embeds, torch.sigmoid(ac_pos_raws)], dim=-1)
+        acs = torch.cat([ac_embeds, ac_pos_raws], dim=-1)
 
         # get q value using current critic
         qs, _ = self.critic(obs, acs)
@@ -182,6 +182,7 @@ class Policy:
         log_probs_embed = -sim_logits.logsumexp(dim=-1)
 
         # ac_pos entropy (Gaussian)
+        print(ac_pos_means.grad.mean().item(), ac_pos_stds.grad.mean().item())
         dist = torch.distributions.Normal(ac_pos_means, ac_pos_stds)
         log_probs_pos = dist.log_prob(ac_pos_raws).sum(dim=-1)
 
@@ -210,6 +211,8 @@ class Policy:
             "actor_loss": actor_loss.item(),
             "alpha": self.log_alpha.exp().mean().item(),
             "alpha_loss": alpha_loss.item(),
-            "entropy": entropy.mean().item()
+            "entropy": entropy.mean().item(),
+            "means": ac_pos_means.mean().item(),
+            "stds": ac_pos_stds.mean().item()
         }
         return metric

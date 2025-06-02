@@ -138,12 +138,12 @@ class Game:
     def agent_rew(self, player, enemy, p_damage_taken, e_damage_taken):
         rew = 0
         if enemy.health <= 0:
-            rew += 500
+            rew += 100
         if player.health <= 0:
-            rew -= 500
+            rew -= 100
 
-        rew += e_damage_taken * 5
-        rew -= p_damage_taken * 5
+        rew += e_damage_taken * 0.5
+        rew -= p_damage_taken * 1
 
         # rew -= (player.max_stam - player.stam) * 0.0001
 
