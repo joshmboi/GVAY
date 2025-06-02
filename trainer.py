@@ -115,12 +115,12 @@ class Trainer:
             self.eval_step
         )
         self.logger.log_scalar(
-            "SimMax Return:",
+            "Sim/Max Return:",
             max(rews),
             self.eval_step
         )
         self.logger.log_scalar(
-            "SimMin Return:",
+            "Sim/Min Return:",
             min(rews),
             self.eval_step
         )
