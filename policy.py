@@ -164,10 +164,6 @@ class Policy:
         ac_embeds, ac_pos_raws, (
             ac_pos_means, ac_pos_stds
         ), _ = self.actor(obs)
-        acs = torch.cat([ac_embeds, torch.sigmoid(ac_pos_raws)], dim=-1)
-
-        # get q value using current critic
-        qs, _ = self.critic(obs, acs)
 
         # ac_embeds entropy
         sim_logits = self.ac_embed(ac_embeds)
@@ -179,6 +175,20 @@ class Policy:
             ).unsqueeze(0)
             sim_logits = sim_logits.masked_fill(~ac_mask_tensor, -1e9)
 
+        probs = F.softmax(sim_logits, dim=-1)
+
+        ac_embeds = (
+            probs.unsqueeze(-1) * self.ac_embed.embedding.weight
+        ).sum(dim=1)
+
+        acs = torch.cat(
+            [ac_embeds, torch.sigmoid(ac_pos_raws)], dim=-1
+        )
+
+        # get q value using current critic
+        qs, _ = self.critic(obs, acs)
+
+        # discrete entropy
         log_probs_embed = -sim_logits.logsumexp(dim=-1)
 
         # ac_pos entropy (Gaussian)
