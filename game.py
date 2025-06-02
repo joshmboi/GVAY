@@ -142,8 +142,8 @@ class Game:
         if player.health <= 0:
             rew -= 100
 
-        rew += e_damage_taken * 0.5
-        rew -= p_damage_taken * 1
+        rew += e_damage_taken * 1
+        rew -= p_damage_taken * 0.5
 
         # rew -= (player.max_stam - player.stam) * 0.0001
 

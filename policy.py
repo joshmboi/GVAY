@@ -182,10 +182,15 @@ class Policy:
         log_probs_embed = -sim_logits.logsumexp(dim=-1)
 
         # ac_pos entropy (Gaussian)
-        print(ac_pos_means.grad.mean().item(), ac_pos_stds.grad.mean().item())
+        def grad_hook(name):
+            def hook(grad):
+                print(f"{name} grad mean: {grad.mean().item()}, std: {grad.std().item()}")
+            return hook
         dist = torch.distributions.Normal(ac_pos_means, ac_pos_stds)
         log_probs_pos = dist.log_prob(ac_pos_raws).sum(dim=-1)
 
+        ac_pos_means.register_hook(grad_hook("ac_pos_mean"))
+        ac_pos_stds.register_hook(grad_hook("ac_pos_std"))
         # total entropy
         entropy = log_probs_embed + log_probs_pos
         entropy = entropy

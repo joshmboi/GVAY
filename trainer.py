@@ -155,17 +155,17 @@ class Trainer:
         self.logger.log_scalar(
             "Sim/Mean Return:",
             sum(rews) / len(rews),
-            self.eval_step
+            self.iters
         )
         self.logger.log_scalar(
             "Sim/Max Return:",
             max(rews),
-            self.eval_step
+            self.iters
         )
         self.logger.log_scalar(
             "Sim/Min Return:",
             min(rews),
-            self.eval_step
+            self.iters
         )
 
         # print out return stats
@@ -374,7 +374,7 @@ class Trainer:
 
 
 trainer = Trainer()
-trainer.run_training(1000, consts.TRAIN_STEPS, 10000, 1800)
+trainer.run_training(1000, consts.TRAIN_STEPS, 15000, 1080)
 # game = Game()
 # game.reset()
 # game.run()
