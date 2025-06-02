@@ -304,12 +304,12 @@ class Trainer:
 
             self.logger.log_scalar(
                 "Position/Means",
-                pos_means,
+                sum(pos_means) / num_train_steps,
                 self.train_step
             )
             self.logger.log_scalar(
                 "Position/Stds",
-                pos_stds,
+                sum(pos_stds) / num_train_steps,
                 self.train_step
             )
 
