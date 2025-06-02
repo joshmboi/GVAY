@@ -164,7 +164,7 @@ class Policy:
         ac_embeds, ac_pos_raws, (
             ac_pos_means, ac_pos_stds
         ), _ = self.actor(obs)
-        acs = torch.cat([ac_embeds, ac_pos_raws], dim=-1)
+        acs = torch.cat([ac_embeds, torch.sigmoid(ac_pos_raws)], dim=-1)
 
         # get q value using current critic
         qs, _ = self.critic(obs, acs)
