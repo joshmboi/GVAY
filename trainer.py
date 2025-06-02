@@ -374,7 +374,7 @@ class Trainer:
 
 
 trainer = Trainer()
-trainer.run_training(1000, consts.TRAIN_STEPS, 15000, 1080)
+trainer.run_training(1000, consts.TRAIN_STEPS, 10000, 1080)
 # game = Game()
 # game.reset()
 # game.run()
