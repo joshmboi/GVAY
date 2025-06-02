@@ -71,7 +71,7 @@ class Actor(nn.Module):
         # sample position of action
         ac_pos_mean = self.ac_pos_mean(last_out)
         ac_pos_std = torch.exp(
-            torch.clamp(self.ac_pos_logstd(last_out), -2, 0.4)
+            torch.clamp(self.ac_pos_logstd(last_out), -4, 1.5)
         )
 
         # noise
