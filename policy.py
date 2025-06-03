@@ -9,28 +9,25 @@ from sac import Actor, Critic, AcEmbed
 
 
 class Policy:
-    def __init__(
-            self, actor=Actor(), critic=Critic(), ac_embed=AcEmbed(),
-            lr=1e-3, device=consts.DEVICE, player=True
-    ):
+    def __init__(self, lr=1e-3, device=consts.DEVICE, player=True):
         # device
         self.device = device
 
         # actor and hidden state
-        self.actor = actor.to(self.device)
+        self.actor = Actor().to(self.device)
         self.actor_hidden = None
         if player:
             self.actor_optimizer = optim.Adam(self.actor.parameters(), lr=lr)
 
         if player:
             # critic
-            self.critic = critic.to(self.device)
+            self.critic = Critic().to(self.device)
             self.critic_hidden = None
-            self.target_critic = copy.deepcopy(critic).to(self.device)
+            self.target_critic = copy.deepcopy(self.critic).to(self.device)
             self.critic_optimizer = optim.Adam(self.critic.parameters(), lr=lr)
 
         # action embedding
-        self.ac_embed = ac_embed.to(self.device)
+        self.ac_embed = AcEmbed().to(self.device)
         if player:
             self.ac_embed_optimizer = optim.Adam(
                 self.ac_embed.parameters(), lr=lr
