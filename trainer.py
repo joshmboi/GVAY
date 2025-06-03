@@ -8,7 +8,7 @@ from logger import Logger
 
 class Trainer:
     def __init__(self):
-        self.ac_mask = [1, 1, 1, 1, 1]
+        self.ac_mask = [0, 1, 0, 0, 0]
         self.game = Game(True, ac_mask=self.ac_mask)
 
         self.tot_steps = 0
