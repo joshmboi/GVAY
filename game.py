@@ -146,9 +146,9 @@ class Game:
         rew -= p_damage_taken * 0.5
 
         # encourage playing in the center
-        rew -= math.hypot(
-            player.x - self.disp_w // 2, player.y - self.disp_h // 2
-        )**2 * 0.00005
+        # rew -= math.hypot(
+        #     player.x - self.disp_w // 2, player.y - self.disp_h // 2
+        # )**2 * 0.00005
 
         # rew -= (player.max_stam - player.stam) * 0.0001
 
