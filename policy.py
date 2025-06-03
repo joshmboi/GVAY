@@ -213,12 +213,17 @@ class Policy:
         alpha_loss.backward()
         self.alpha_optimizer.step()
 
+        means = ac_pos_means.mean(dim=-1)
+        stds = ac_pos_stds.mean(dim=-1)
+
         metric = {
             "actor_loss": actor_loss.item(),
             "alpha": self.log_alpha.exp().mean().item(),
             "alpha_loss": alpha_loss.item(),
             "entropy": entropy.mean().item(),
-            "means": ac_pos_means.mean().item(),
-            "stds": ac_pos_stds.mean().item()
+            "means_x": means[0],
+            "means_y": means[1],
+            "stds_x": stds[0],
+            "stds_y": stds[1]
         }
         return metric

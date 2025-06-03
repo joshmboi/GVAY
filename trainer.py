@@ -178,8 +178,8 @@ class Trainer:
 
     def train(self, num_train_steps):
         # initialize metrics tracking
-        c_losses, q_vals, a_losses = [], [], []
-        alphs, entropies, alph_losses, pos_means, pos_stds = [], [], [], [], []
+        c_losses, q_vals, a_losses, pos_means_x, pos_means_y = [], [], [], [], []
+        alphs, entropies, alph_losses, pos_stds_x, pos_stds_y = [], [], [], [], []
         c_loss_min, c_loss_max, a_loss_min, a_loss_max = None, None, None, None
         q_max, q_min, entropy_min, entropy_max = None, None, None, None
 
@@ -213,8 +213,10 @@ class Trainer:
                 alphs.append(a_metrics["alpha"])
                 entropies.append(a_metrics["entropy"])
                 alph_losses.append(a_metrics["alpha_loss"])
-                pos_means.append(a_metrics["means"])
-                pos_stds.append(a_metrics["stds"])
+                pos_means_x.append(a_metrics["means_x"])
+                pos_stds_x.append(a_metrics["stds_x"])
+                pos_means_y.append(a_metrics["means_y"])
+                pos_stds_y.append(a_metrics["stds_y"])
 
                 if not a_loss_min:
                     a_loss_min = a_metrics["actor_loss"]
@@ -303,13 +305,23 @@ class Trainer:
             )
 
             self.logger.log_scalar(
-                "Position/Means",
-                sum(pos_means) / num_train_steps,
+                "Position/X Means",
+                sum(pos_means_x) / num_train_steps,
                 self.train_step
             )
             self.logger.log_scalar(
-                "Position/Stds",
-                sum(pos_stds) / num_train_steps,
+                "Position/X Stds",
+                sum(pos_stds_x) / num_train_steps,
+                self.train_step
+            )
+            self.logger.log_scalar(
+                "Position/Y Means",
+                sum(pos_means_y) / num_train_steps,
+                self.train_step
+            )
+            self.logger.log_scalar(
+                "Position/Y Stds",
+                sum(pos_stds_y) / num_train_steps,
                 self.train_step
             )
 
@@ -333,8 +345,10 @@ class Trainer:
             print(f"Alpha/Mean Value: {sum(alphs) / num_train_steps}")
             print(f"Alpha/Mean Loss: {sum(alph_losses) / num_train_steps}")
 
-            print(f"Position/Means: {sum(pos_means) / num_train_steps}")
-            print(f"Position/Stds: {sum(pos_stds) / num_train_steps}")
+            print(f"Position/X Means: {sum(pos_means_x) / num_train_steps}")
+            print(f"Position/X Stds: {sum(pos_stds_x) / num_train_steps}")
+            print(f"Position/Y Means: {sum(pos_means_y) / num_train_steps}")
+            print(f"Position/Y Stds: {sum(pos_stds_y) / num_train_steps}")
 
         print()
 
