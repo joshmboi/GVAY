@@ -17,7 +17,7 @@ class Policy:
         self.actor = Actor().to(self.device)
         self.actor_hidden = None
         if player:
-            self.actor_optimizer = optim.Adam(self.actor.parameters(), lr=lr)
+            self.actor_optimizer = optim.Adam(self.actor.parameters(), lr=1e-4)
 
         if player:
             # critic
