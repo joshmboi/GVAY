@@ -204,7 +204,7 @@ class Trainer:
                 q_min = min(q_min, c_metrics["q_val_min"])
                 q_max = max(q_max, c_metrics["q_val_max"])
 
-            if self.iters >= consts.CRITIC_ONLY and i % 4 == 0:
+            if self.iters >= consts.CRITIC_ONLY and i % 2 == 0:
                 a_metrics = self.game.player.policy.update_actor(
                     batch, ac_mask=self.ac_mask
                 )
