@@ -103,7 +103,9 @@ class Trainer:
                         sum(accum_p_rew_list) / len(accum_p_rew_list),
                         self.tot_steps
                     )
-                    print(f"Eval/Mean Return: {sum(accum_p_rew_list) / len(accum_p_rew_list)}")
+                    print(
+                        f"Eval/Mean Return: {sum(accum_p_rew_list) / len(accum_p_rew_list)}"
+                    )
 
                 # reset done and first
                 done = False
