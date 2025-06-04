@@ -32,15 +32,12 @@ class Game:
         # init players
         self.player = Agent(
             self.disp_w // 4, self.disp_h // 2,
-            palette=consts.PLAYER_PALETTE, rad=28, speed=6, player=True
+            palette=consts.PLAYER_PALETTE
         )
         self.enemy = Agent(
             (self.disp_w * 3) // 4, self.disp_h // 2,
-            palette=consts.ENEMY_PALETTE, rad=28, speed=6, player=False
+            palette=consts.ENEMY_PALETTE
         )
-
-        # copy over policy to enemy
-        self.enemy.policy.update_policy(self.player.policy)
 
         # init player and enemy screens
         self.p_screen = pygame.Surface(
@@ -156,7 +153,7 @@ class Game:
 
         return rew
 
-    def step(self, playing=False):
+    def step(self, playing=False, p_ac=None, e_ac=None):
         # check to see if window was closed
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -181,37 +178,17 @@ class Game:
             if keys[pygame.K_f]:
                 self.player.play_e()
 
-        ac_idx, ac_pos = None, None
+        if not playing and p_ac is not None:
+            # take player action
+            p_ac_idx, p_ac_pos = p_ac
+            self.player.take_action(p_ac_idx, p_ac_pos)
 
-        # get action and take it if acting frame
-        if self.frame % consts.FPA == 0 and self.frame >= consts.WINDOW:
-            # poll policy
-            p_ac_idx, p_ac_pos = self.player.policy.get_action(
-                self.p_ob, self.ac_mask
-            )
-            e_ac_idx, e_ac_pos = self.enemy.policy.get_action(
-                self.e_ob, self.ac_mask
-            )
-
-            # take action
-            if not playing:
-                self.player.take_action(p_ac_idx, p_ac_pos)
+        if e_ac is not None:
+            # take enemy action
+            e_ac_idx, e_ac_pos = e_ac
             self.enemy.take_action(e_ac_idx, e_ac_pos)
 
-            ac_idx = {
-                "player": p_ac_idx,
-                "enemy": e_ac_idx
-            }
-
-            ac_pos = {
-                "player": p_ac_pos,
-                "enemy": e_ac_pos
-            }
-        else:
-            if not playing:
-                self.player.policy.update_actor_hidden(self.p_ob)
-            self.enemy.policy.update_actor_hidden(self.e_ob)
-
+        # set new observations
         self.p_ob = self.agent_ob(self.p_screen)
         self.e_ob = self.agent_ob(self.e_screen)
 
@@ -259,7 +236,7 @@ class Game:
             "enemy": 0
         }
 
-        return ob, ac_idx, ac_pos, rew, done, info
+        return ob, rew, done, info
 
     def game_over(self):
         font = pygame.font.SysFont("Arial", 72)

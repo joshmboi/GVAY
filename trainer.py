@@ -1,6 +1,7 @@
 import consts as consts
 
 from game import Game
+from policy import Policy
 from rollout import Roll
 from replaybuffer import ReplayBuffer
 from logger import Logger
@@ -8,9 +9,6 @@ from logger import Logger
 
 class Trainer:
     def __init__(self):
-        self.ac_mask = [0, 0, 1, 0, 0]
-        self.game = Game(True, ac_mask=self.ac_mask)
-
         self.tot_steps = 0
         self.rebuff = ReplayBuffer(consts.REBUFF_SIZE)
 
@@ -18,6 +16,14 @@ class Trainer:
         self.iters = 0
         self.train_step = 0
         self.eval_step = 0
+
+        self.p_pol = Policy(player=True)
+        self.e_pol = Policy(player=False)
+        self.e_pol.update_policy(self.p_pol)
+
+        # init game
+        self.ac_mask = [0, 0, 1, 0, 0]
+        self.game = Game(True, ac_mask=self.ac_mask)
 
     def sim_roll(self, max_ep_len=1800, eps=0, render=False):
         # initialize steps and frames
@@ -44,15 +50,32 @@ class Trainer:
             if render:
                 frames.append(self.game.player_screen())
 
-            ob, ac_idx, ac_pos, rew, done, info = self.game.step()
+            p_ac, e_ac = None, None
 
-            if ac_idx is not None or ac_pos is not None:
+            # get action and take it if acting frame
+            if steps % consts.FPA == 0 and steps >= consts.WINDOW:
+                # poll policy
+                p_ac = self.p_pol.get_action(p_obs[-1], self.ac_mask)
+                e_ac = self.e_pol.get_action(e_obs[-1], self.ac_mask)
+
+            else:
+                self.p_pol.update_actor_hidden(p_obs[-1])
+                self.e_pol.update_actor_hidden(e_obs[-1])
+
+            # move forward step
+            ob, rew, done, info = self.game.step(
+                playing=False, p_ac=p_ac, e_ac=e_ac
+            )
+
+            # only when action taking turn
+            if p_ac is not None and e_ac is not None:
                 # add actions
-                p_ac_idxs.append(ac_idx["player"])
-                e_ac_idxs.append(ac_idx["enemy"])
-                p_ac_poses.append(ac_pos["player"])
-                e_ac_poses.append(ac_pos["enemy"])
+                p_ac_idxs.append(p_ac[0])
+                e_ac_idxs.append(e_ac[0])
+                p_ac_poses.append(p_ac[1])
+                e_ac_poses.append(e_ac[1])
 
+                # rewards assigning to actions
                 if len(p_dones) != 0:
                     # add rewards and reset
                     p_rews.append(tot_p_rew)
@@ -186,9 +209,7 @@ class Trainer:
         for i in range(num_train_steps):
             batch = self.rebuff.sample(consts.BATCH_SIZE)
 
-            c_metrics = self.game.player.policy.update_critic(
-                batch, ac_mask=self.ac_mask
-            )
+            c_metrics = self.p_pol.update_critic(batch, ac_mask=self.ac_mask)
 
             c_losses.append(c_metrics["critic_loss"])
             q_vals.append(c_metrics["q_values"])
@@ -205,7 +226,7 @@ class Trainer:
                 q_max = max(q_max, c_metrics["q_val_max"])
 
             if self.iters >= consts.CRITIC_ONLY and i % 4 == 0:
-                a_metrics = self.game.player.policy.update_actor(
+                a_metrics = self.p_pol.update_actor(
                     batch, ac_mask=self.ac_mask
                 )
 
@@ -382,18 +403,19 @@ class Trainer:
 
             if i % consts.SAVE_EVERY == 0:
                 print("Saving...")
-                self.logger.save_models(self.game.player, self.game.enemy, i)
+                self.logger.save_models(self.p_pol, self.e_pol, i)
                 print()
 
             if i % consts.ENEMY_UPDATE == 0 and i != 0:
                 print("Updating Enemy...")
-                self.game.enemy.policy.update_policy(self.game.player.policy)
+                self.e_pol.update_policy(self.p_pol)
                 print()
 
             self.iters += 1
 
 
 trainer = Trainer()
+# trainer.sim_roll(1080, 0.0, True)
 trainer.run_training(1000, consts.TRAIN_STEPS, 10000, 1080)
 # game = Game()
 # game.reset()

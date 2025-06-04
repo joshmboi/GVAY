@@ -6,13 +6,11 @@ import consts as consts
 from abilities.proj import Projectile
 from abilities.scorch import Scorch
 from abilities.shield import Shield
-from policy import Policy
 
 
 class Agent:
     def __init__(
-        self, x=consts.DISP_W // 2, y=consts.DISP_H // 2, rad=28,
-        palette=consts.AGENT_PALETTE, speed=3, player=True
+        self, x, y, palette=consts.AGENT_PALETTE, speed=6, rad=28
     ):
         # position
         self.init_x = x
@@ -65,9 +63,6 @@ class Agent:
         self.max_health = 200
         self.health = self.max_health
         self.health_reg = 1
-
-        # policy stuff
-        self.policy = Policy(player=player)
 
     def reset(self):
         # position and desired position
