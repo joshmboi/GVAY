@@ -199,6 +199,10 @@ class Policy:
         dist = torch.distributions.Normal(ac_pos_means, ac_pos_stds)
         ac_pos_entropy = dist.entropy().sum(dim=-1)
 
+        # penalize for large means
+        pos_center = 0.5
+        pos_penalty = 1e-3 * ((ac_pos_means - pos_center) ** 2).mean()
+
         # total entropy
         entropy = (
                 self.log_alpha_type.exp() * ac_type_entropy +
@@ -217,7 +221,7 @@ class Policy:
                 ).detach()
         ).mean()
 
-        actor_loss = (-qs + entropy).mean()
+        actor_loss = (-qs + entropy).mean() + pos_penalty
 
         self.actor_optimizer.zero_grad()
         self.ac_embed_optimizer.zero_grad()

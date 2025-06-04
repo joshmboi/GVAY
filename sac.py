@@ -52,7 +52,7 @@ class CNNLSTM(nn.Module):
 
 
 class Actor(nn.Module):
-    def __init__(self, hidden_dim=128, num_embed=4, param_dim=2):
+    def __init__(self, hidden_dim=128, num_embed=4):
         super().__init__()
 
         # init cnn, layer norm, and lstm
@@ -62,8 +62,10 @@ class Actor(nn.Module):
         self.ac_embed = nn.Linear(hidden_dim, num_embed)
 
         # choose action position
-        self.ac_pos_mean = nn.Linear(hidden_dim, param_dim)
-        self.ac_pos_logstd = nn.Linear(hidden_dim, param_dim)
+        self.ac_pos_mean_x = nn.Linear(hidden_dim, 1)
+        self.ac_pos_mean_y = nn.Linear(hidden_dim, 1)
+        self.ac_pos_logstd_x = nn.Linear(hidden_dim, 1)
+        self.ac_pos_logstd_y = nn.Linear(hidden_dim, 1)
 
     def forward(self, seq, hidden=None):
         lstm_out, features, hidden = self.cnnlstm(seq, hidden)
@@ -73,10 +75,17 @@ class Actor(nn.Module):
         ac_embed = self.ac_embed(last_out)
 
         # sample position of action
-        ac_pos_mean = self.ac_pos_mean(last_out)
-        ac_pos_std = torch.exp(
-            torch.clamp(self.ac_pos_logstd(last_out), -4, 0.25)
+        ac_pos_mean_x = self.ac_pos_mean_x(last_out)
+        ac_pos_mean_y = self.ac_pos_mean_y(last_out)
+        ac_pos_mean = torch.cat((ac_pos_mean_x, ac_pos_mean_y), dim=-1)
+
+        ac_pos_std_x = torch.exp(
+            torch.clamp(self.ac_pos_logstd_x(last_out), -4, 0.25)
         )
+        ac_pos_std_y = torch.exp(
+            torch.clamp(self.ac_pos_logstd_x(last_out), -4, 0.25)
+        )
+        ac_pos_std = torch.cat((ac_pos_std_x, ac_pos_std_y), dim=-1)
 
         # noise
         ac_pos_eps = torch.randn_like(ac_pos_std)
