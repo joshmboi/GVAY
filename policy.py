@@ -34,12 +34,18 @@ class Policy:
             )
 
         # alpha for entropy control
-        self.log_alpha = torch.tensor(
-            np.log(0.1), requires_grad=True, device=device
+        self.log_alpha_type = torch.tensor(
+            0.0, requires_grad=True, device=device
+        )
+
+        self.log_alpha_pos = torch.tensor(
+            0.0, requires_grad=True, device=device
         )
         if player:
-            self.alpha_optimizer = optim.Adam([self.log_alpha], lr=lr)
-            self.target_entropy = -7.0 / 2
+            self.type_alpha_optimizer = optim.Adam([self.log_alpha], lr=lr)
+            self.pos_alpha_optimizer = optim.Adam([self.log_alpha], lr=lr)
+            self.type_target_entropy = -0.5 * 1
+            self.pos_target_entropy = -2 * 0.5
 
     def make_device_tensor(self, arr):
         return torch.tensor(arr).to(self.device)
@@ -173,6 +179,7 @@ class Policy:
             sim_logits = sim_logits.masked_fill(~ac_mask_tensor, -1e9)
 
         probs = F.softmax(sim_logits, dim=-1)
+        log_probs = F.log_softmax(sim_logits, dim=-1)
 
         ac_embeds = (
             probs.unsqueeze(-1) * self.ac_embed.embedding.weight
@@ -185,23 +192,32 @@ class Policy:
         # get q value using current critic
         qs, _ = self.critic(obs, acs)
 
-        # discrete entropy
-        log_probs_embed = -sim_logits.logsumexp(dim=-1)
+        # ac_type entropy (Softmax)
+        ac_type_entropy = -(probs * log_probs).sum(dim=-1)
 
         # ac_pos entropy (Gaussian)
         dist = torch.distributions.Normal(ac_pos_means, ac_pos_stds)
-        log_probs_pos = dist.log_prob(ac_pos_raws).sum(dim=-1)
+        ac_pos_entropy = dist.entropy().sum(dim=-1)
 
         # total entropy
-        entropy = log_probs_embed + log_probs_pos
-        entropy = entropy
+        entropy = (
+                self.log_alpha_type.exp() * ac_type_entropy +
+                self.log_alpha_pos.exp() * ac_pos_entropy
+        ).detach()
 
         # alpha loss
-        alpha_loss = -(
-            self.log_alpha.exp() * (entropy + self.target_entropy).detach()
+        type_alpha_loss = -(
+                self.log_alpha_type.exp() * (
+                    ac_type_entropy - self.type_target_entropy
+                ).detach()
+        ).mean()
+        pos_alpha_loss = -(
+                self.log_alpha_pos.exp() * (
+                    ac_pos_entropy - self.pos_target_entropy
+                ).detach()
         ).mean()
 
-        actor_loss = (-qs + self.log_alpha.exp() * entropy).mean()
+        actor_loss = (-qs + entropy).mean()
 
         self.actor_optimizer.zero_grad()
         self.ac_embed_optimizer.zero_grad()
@@ -209,17 +225,23 @@ class Policy:
         self.actor_optimizer.step()
         self.ac_embed_optimizer.step()
 
-        self.alpha_optimizer.zero_grad()
-        alpha_loss.backward()
-        self.alpha_optimizer.step()
+        self.type_alpha_optimizer.zero_grad()
+        type_alpha_loss.backward()
+        self.type_alpha_optimizer.step()
+
+        self.pos_alpha_optimizer.zero_grad()
+        pos_alpha_loss.backward()
+        self.pos_alpha_optimizer.step()
 
         means = ac_pos_means.mean(dim=-1)
         stds = ac_pos_stds.mean(dim=-1)
 
         metric = {
             "actor_loss": actor_loss.item(),
-            "alpha": self.log_alpha.exp().mean().item(),
-            "alpha_loss": alpha_loss.item(),
+            "type_alpha": self.log_alpha_type.exp().mean().item(),
+            "type_pos": self.log_alpha_pos.exp().mean().item(),
+            "type_alpha_loss": type_alpha_loss.item(),
+            "pos_alpha_loss": pos_alpha_loss.item(),
             "entropy": entropy.mean().item(),
             "means_x": means[0],
             "means_y": means[1],

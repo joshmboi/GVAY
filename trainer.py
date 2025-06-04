@@ -219,13 +219,23 @@ class Trainer:
                     )
 
                     self.logger.log_scalar(
-                        "Alpha Value",
-                        a_metrics["alpha"],
+                        "Type Alpha Value",
+                        a_metrics["type_alpha"],
                         self.tot_steps
                     )
                     self.logger.log_scalar(
-                        "Alpha Loss",
-                        a_metrics["alpha_loss"],
+                        "Type Alpha Value",
+                        a_metrics["pos_alpha"],
+                        self.tot_steps
+                    )
+                    self.logger.log_scalar(
+                        "Type Alpha Loss",
+                        a_metrics["type_alpha_loss"],
+                        self.tot_steps
+                    )
+                    self.logger.log_scalar(
+                        "Pos Alpha Loss",
+                        a_metrics["pos_alpha_loss"],
                         self.tot_steps
                     )
 
