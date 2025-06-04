@@ -9,23 +9,15 @@ class CNNLSTM(nn.Module):
 
         # convolution layers
         self.conv = nn.Sequential(
-            nn.Conv2d(3, 16, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(3, 16, kernel_size=3, stride=2, padding=1),
             nn.ReLU(),
             nn.MaxPool2d(2),
 
-            nn.Conv2d(16, 32, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(16, 32, kernel_size=3, stride=2, padding=1),
             nn.ReLU(),
             nn.MaxPool2d(2),
 
-            nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1),
-            nn.ReLU(),
-            nn.MaxPool2d(2),
-
-            nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1),
-            nn.ReLU(),
-            nn.MaxPool2d(2),
-
-            nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(32, 32, kernel_size=3, stride=2, padding=1),
             nn.ReLU(),
             nn.MaxPool2d(2),
 
@@ -36,6 +28,7 @@ class CNNLSTM(nn.Module):
             dummy = torch.zeros(1, 3, 200, 150)
             conv_out = self.conv(dummy)
             flat_dim = conv_out.shape[1]
+            print(flat_dim)
 
         self.fc = nn.Linear(flat_dim, feature_dim)
 
