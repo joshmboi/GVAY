@@ -32,12 +32,6 @@ class Trainer:
         # done flag for completion of episode
         done = True
 
-        # frames for rendering
-        frames = []
-
-        # first action flag
-        first_ac = True
-
         # accumulated reward
         accum_p_rew = None
 
@@ -65,6 +59,12 @@ class Trainer:
                     print(
                         f"Eval Return: {accum_p_rew}"
                     )
+
+                # frames for rendering
+                frames = []
+
+                # first action flag
+                first_ac = True
 
                 # reset total rewards
                 accum_p_rew = 0.0
@@ -146,6 +146,7 @@ class Trainer:
 
                 # set render
                 if render:
+                    self.logger.log_video(frames, f"{self.tot_steps}.mp4")
                     render = False
 
                 if next_render:
