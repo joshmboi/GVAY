@@ -41,16 +41,16 @@ class Logger:
 
         out.release()
 
-    def save_models(self, player, enemy, iter):
+    def save_models(self, p_pol, e_pol, iter):
         torch.save({
-            "p_actor": player.policy.actor.state_dict(),
-            "p_critic": player.policy.critic.state_dict(),
-            "p_ac_embed": player.policy.ac_embed.state_dict(),
-            "p_actor_optim": player.policy.actor_optimizer.state_dict(),
-            "p_critic_optim": player.policy.critic_optimizer.state_dict(),
-            "p_ac_embed_optim": player.policy.ac_embed_optimizer.state_dict(),
-            "e_actor": enemy.policy.actor.state_dict(),
-            "e_ac_embed": enemy.policy.ac_embed.state_dict(),
+            "p_actor": p_pol.actor.state_dict(),
+            "p_critic": p_pol.critic.state_dict(),
+            "p_ac_embed": p_pol.ac_embed.state_dict(),
+            "p_actor_optim": p_pol.actor_optimizer.state_dict(),
+            "p_critic_optim": p_pol.critic_optimizer.state_dict(),
+            "p_ac_embed_optim": p_pol.ac_embed_optimizer.state_dict(),
+            "e_actor": e_pol.actor.state_dict(),
+            "e_ac_embed": e_pol.ac_embed.state_dict(),
             "iteration": iter
         }, os.path.join(self.model_path, f"model_{iter}.pth"))
 
