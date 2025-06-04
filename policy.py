@@ -42,8 +42,8 @@ class Policy:
             0.0, requires_grad=True, device=device
         )
         if player:
-            self.type_alpha_optimizer = optim.Adam([self.log_alpha], lr=lr)
-            self.pos_alpha_optimizer = optim.Adam([self.log_alpha], lr=lr)
+            self.type_alpha_optimizer = optim.Adam([self.log_alpha_type], lr=lr)
+            self.pos_alpha_optimizer = optim.Adam([self.log_alpha_pos], lr=lr)
             self.type_target_entropy = -0.5 * 1
             self.pos_target_entropy = -2 * 0.5
 
