@@ -239,7 +239,7 @@ class Policy:
         metric = {
             "actor_loss": actor_loss.item(),
             "type_alpha": self.log_alpha_type.exp().mean().item(),
-            "type_pos": self.log_alpha_pos.exp().mean().item(),
+            "pos_alpha": self.log_alpha_pos.exp().mean().item(),
             "type_alpha_loss": type_alpha_loss.item(),
             "pos_alpha_loss": pos_alpha_loss.item(),
             "entropy": entropy.mean().item(),
