@@ -9,7 +9,7 @@ WINDOW = 2 * FPA
 
 # training
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-REBUFF_SIZE = 40000
+REBUFF_SIZE = 20000
 BATCH_SIZE = 256
 
 # number of iterations for things
