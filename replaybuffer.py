@@ -74,8 +74,6 @@ class ReplayBuffer:
         return i - 1
 
     def sample(self, batch_size):
-        print(len(self.obs), len(self.ac_idxs), self.inds)
-
         batch = []
         while len(batch) < batch_size:
             # random index for sampling
@@ -88,7 +86,6 @@ class ReplayBuffer:
 
             ob = []
             for i in range(ob_start, ob_start + self.window):
-                print(i, self.num_epis(idx), idx)
                 ob.append(self.obs[i])
             ac_idx = self.ac_idxs[idx]
             ac_pos = self.ac_poses[idx]
@@ -100,7 +97,6 @@ class ReplayBuffer:
             else:
                 nob = []
                 for i in range(nob_start, nob_start + self.window):
-                    print(i, done)
                     nob.append(self.obs[i])
 
             batch.append((ob, ac_idx, ac_pos, rew, nob, done))
