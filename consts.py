@@ -8,15 +8,29 @@ FPA = 6
 WINDOW = 2 * FPA
 
 # training
-DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+if torch.cuda.is_available():
+    DEVICE = "cuda"
+elif torch.backends.mps.is_available() and torch.backends.mps.is_built():
+    DEVICE = "mps"
+else:
+    DEVICE = "cpu"
+print(DEVICE)
 REBUFF_SIZE = 20000
 BATCH_SIZE = 256
 
 # number of iterations for things
-ITERS_PER_EVAL = 20000
+ITERS_PER_EVAL = 10000
 SAVE_EVERY = 40000
-ENEMY_UPDATE = 40000
+ENEMY_UPDATE = 4000000
 CRITIC_ONLY = 30000
+
+# nn params
+FEATURE_DIM = 64
+LSTM_DIM = 64
+STATE_DIM = 40
+AC_EMBED_DIM = 4
+NUM_ACTIONS = 5
+AC_DIM = AC_EMBED_DIM + 2
 
 # colors
 WHITE = (255, 255, 255)
@@ -59,7 +73,7 @@ HEALTH_DARK = (117, 153, 111)
 STAM_LIGHT = (255, 238, 140)
 STAM_DARK = (204, 178, 51)
 
-# damages
+# ability info
 PROJ_DAMAGE = 10
 SCORCH_DAMAGE = 30
 SHIELD_DAMAGE = 30

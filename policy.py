@@ -1,25 +1,28 @@
 import copy
-import numpy as np
 import torch
 import torch.optim as optim
 import torch.nn.functional as F
 
 import consts as consts
-from sac import Actor, Critic, AcEmbed
+from models import Actor, Critic, AcEmbed
 
 
 class Policy:
-    def __init__(self, lr=1e-3, device=consts.DEVICE, player=True):
+    def __init__(self, lr=1e-3, player=True, training=False):
         # device
-        self.device = device
+        self.device = consts.DEVICE
+
+        # whether player and whether training
+        self.player = player
+        self.training = training
 
         # actor and hidden state
         self.actor = Actor().to(self.device)
         self.actor_hidden = None
-        if player:
+        if training:
             self.actor_optimizer = optim.Adam(self.actor.parameters(), lr=1e-4)
 
-        if player:
+        if self.training:
             # critic
             self.critic = Critic().to(self.device)
             self.critic_hidden = None
@@ -28,20 +31,20 @@ class Policy:
 
         # action embedding
         self.ac_embed = AcEmbed().to(self.device)
-        if player:
+        if self.training:
             self.ac_embed_optimizer = optim.Adam(
                 self.ac_embed.parameters(), lr=lr
             )
 
         # alpha for entropy control
         self.log_alpha_type = torch.tensor(
-            0.0, requires_grad=True, device=device
+            0.0, requires_grad=True, device=self.device
         )
 
         self.log_alpha_pos = torch.tensor(
-            0.0, requires_grad=True, device=device
+            0.0, requires_grad=True, device=self.device
         )
-        if player:
+        if self.training:
             self.type_alpha_optimizer = optim.Adam([self.log_alpha_type], lr=lr)
             self.pos_alpha_optimizer = optim.Adam([self.log_alpha_pos], lr=lr)
             self.type_target_entropy = -0.5 * 1
@@ -253,3 +256,20 @@ class Policy:
             "stds_y": stds[1]
         }
         return metric
+
+    def load_policy(self, filepath):
+        params = torch.load(
+            filepath, map_location=consts.DEVICE, weights_only=True
+        )
+        if self.player:
+            self.actor.load_state_dict(params["p_actor"])
+            self.ac_embed.load_state_dict(params["p_ac_embed"])
+
+            if self.training:
+                self.critic.load_state_dict(params["p_critic"])
+                self.actor_optimizer.load_state_dict(["p_actor_optim"])
+                self.critic_optimizer.load_state_dict(["p_critic_optim"])
+                self.ac_embed_optimizer.load_state_dict(["p_ac_embed_optim"])
+        else:
+            self.actor.load_state_dict(params["e_actor"])
+            self.ac_embed.load_state_dict(params["e_ac_embed"])

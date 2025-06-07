@@ -41,18 +41,34 @@ class Logger:
 
         out.release()
 
-    def save_models(self, p_pol, e_pol, iter):
-        torch.save({
-            "p_actor": p_pol.actor.state_dict(),
-            "p_critic": p_pol.critic.state_dict(),
-            "p_ac_embed": p_pol.ac_embed.state_dict(),
-            "p_actor_optim": p_pol.actor_optimizer.state_dict(),
-            "p_critic_optim": p_pol.critic_optimizer.state_dict(),
-            "p_ac_embed_optim": p_pol.ac_embed_optimizer.state_dict(),
-            "e_actor": e_pol.actor.state_dict(),
-            "e_ac_embed": e_pol.ac_embed.state_dict(),
-            "iteration": iter
-        }, os.path.join(self.model_path, f"model_{iter}.pth"))
+    def save_models(self, p_pol, e_pol, iter, pretrain=False):
+        if pretrain:
+            torch.save({
+                "p_actor": p_pol.actor.state_dict(),
+                "p_ac_embed": p_pol.ac_embed.state_dict(),
+                "cnnlstm": p_pol.cnnlstm.state_dict(),
+                "c1": p_pol.c1.state_dict(),
+                "c2": p_pol.c2.state_dict(),
+                "actor_opt": p_pol.actor_opt.state_dict(),
+                "c1_opt": p_pol.c1_opt.state_dict(),
+                "c2_opt": p_pol.c2_opt.state_dict(),
+                "ac_embed_opt": p_pol.ac_embed_opt.state_dict(),
+                "e_actor": e_pol.actor.state_dict(),
+                "e_ac_embed": e_pol.ac_embed.state_dict(),
+                "iteration": iter
+            }, os.path.join(self.model_path, f"model_{iter}.pth"))
+        else:
+            torch.save({
+                "p_actor": p_pol.actor.state_dict(),
+                "p_critic": p_pol.critic.state_dict(),
+                "p_ac_embed": p_pol.ac_embed.state_dict(),
+                "p_actor_optim": p_pol.actor_optimizer.state_dict(),
+                "p_critic_optim": p_pol.critic_optimizer.state_dict(),
+                "p_ac_embed_optim": p_pol.ac_embed_optimizer.state_dict(),
+                "e_actor": e_pol.actor.state_dict(),
+                "e_ac_embed": e_pol.ac_embed.state_dict(),
+                "iteration": iter
+            }, os.path.join(self.model_path, f"model_{iter}.pth"))
 
     def close(self):
         self.writer.close()

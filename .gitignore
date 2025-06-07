@@ -7,7 +7,7 @@ __pycache__/
 *.so
 
 # Don't save videos and runs
-sac_*
+runs/
 
 # Mac
 .DS_Store
