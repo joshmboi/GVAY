@@ -165,7 +165,9 @@ class CriticModule(nn.Module):
         self.q_calc = nn.Sequential(
             nn.Linear(hidden_dim + ac_dim, hidden_dim),
             nn.ReLU(),
-            nn.Linear(hidden_dim, 1)
+            nn.Linear(hidden_dim, hidden_dim // 2),
+            nn.ReLU(),
+            nn.Linear(hidden_dim // 2, 1)
         )
 
     def forward(self, state, ac):

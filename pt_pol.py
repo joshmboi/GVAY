@@ -53,7 +53,7 @@ class PTPolicy:
         if self.training:
             self.type_alph_opt = optim.Adam([self.log_type_alph], lr=lr)
             self.pos_alph_opt = optim.Adam([self.log_pos_alph], lr=lr)
-            self.type_target_entropy = -0.5 * 1
+            self.type_target_entropy = -1.1
             self.pos_target_entropy = -2 * 0.5
 
     def make_device_tensor(self, arr, dtype=None):
@@ -180,11 +180,14 @@ class PTPolicy:
             ):
                 tc_param.copy_((1.0 - tau) * tc_param + tau * c_param)
 
+            q1_mean = q1s.mean()
+            q2_mean = q2s.mean()
+
         metrics = {
             "c1_loss": c1_loss.item(),
             "c2_loss": c2_loss.item(),
-            "q1_vals": q1s.mean().item(),
-            "q2_vals": q2s.mean().item()
+            "q1_vals": q1_mean,
+            "q2_vals": q2_mean
         }
         return metrics
 
@@ -223,7 +226,7 @@ class PTPolicy:
 
         # penalize for large means
         pos_center = 0
-        pos_penalty = 1e-3 * ((ac_pos_means - pos_center) ** 2).mean()
+        pos_penalty = 1e-4 * ((ac_pos_means - pos_center) ** 2).mean()
 
         # total entropy
         entropy = (
@@ -262,14 +265,19 @@ class PTPolicy:
         with torch.no_grad():
             means = ac_pos_means.mean(dim=-1)
             stds = ac_pos_stds.mean(dim=-1)
+            type_alpha_mean = self.log_type_alph.exp().mean()
+            pos_alpha_mean = self.log_pos_alph.exp().mean()
+            type_entropy_mean = ac_type_entropy.mean()
+            pos_entropy_mean = ac_pos_entropy.mean()
 
         metrics = {
             "actor_loss": actor_loss.item(),
-            "type_alpha": self.log_type_alph.exp().mean().item(),
-            "pos_alpha": self.log_pos_alph.exp().mean().item(),
+            "type_alpha": type_alpha_mean,
+            "pos_alpha": pos_alpha_mean,
             "type_alpha_loss": type_alpha_loss.item(),
             "pos_alpha_loss": pos_alpha_loss.item(),
-            "entropy": entropy.mean().item(),
+            "type_entropy": type_entropy_mean,
+            "pos_entropy": pos_entropy_mean,
             "means_x": means[0],
             "means_y": means[1],
             "stds_x": stds[0],
