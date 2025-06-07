@@ -237,12 +237,12 @@ class PTPolicy:
         # alpha loss
         type_alpha_loss = -(
                 self.log_type_alph.exp() * (
-                    ac_type_entropy - self.type_target_entropy
+                    ac_type_entropy + self.type_target_entropy
                 ).detach()
         ).mean()
         pos_alpha_loss = -(
                 self.log_pos_alph.exp() * (
-                    ac_pos_entropy - self.pos_target_entropy
+                    ac_pos_entropy + self.pos_target_entropy
                 ).detach()
         ).mean()
 

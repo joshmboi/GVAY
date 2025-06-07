@@ -15,20 +15,28 @@ class Trainer:
         self.max_steps = consts.TOTAL_ITERS
         self.critic_updates = 0
 
-        self.logger = Logger(name="sac")
         self.iters = 0
         self.train_step = 0
         self.eval_step = 0
 
-    def pretrain(self, max_ep_len=1080):
+    def pretrain(self, max_ep_len=1080, timestamp=None, last_iter=0):
         # init ac_mask and game
         ac_mask = [1, 1, 1, 0, 0]
         e_ac_mask = [1, 1, 1, 0, 0]
+        logger = Logger(name="sac", timestamp=timestamp)
+
         game = Game(training=True)
         p_ptpol = PTPolicy(player=True, training=True)
         e_ptpol = PTPolicy(player=False, training=False)
         e_ptpol.update_policy(p_ptpol)
+
         rebuff = ReplayBuffer(cap=consts.REBUFF_SIZE, pretrain=True)
+
+        if timestamp is not None:
+            logger.load_models(p_ptpol, e_ptpol, iter=last_iter, pretrain=True)
+            self.tot_steps = last_iter
+            self.iters = last_iter
+            rebuff = logger.load_rebuff(iter=last_iter, pretrain=True)
 
         # done and eval flags
         done = True
@@ -51,7 +59,7 @@ class Trainer:
 
                 # add episode return
                 if accum_p_rew is not None:
-                    self.logger.log_scalar(
+                    logger.log_scalar(
                         "Eval Return",
                         accum_p_rew,
                         self.tot_steps
@@ -140,7 +148,7 @@ class Trainer:
                 # set done, eval, and next_eval
                 done = True
                 if eval:
-                    self.logger.log_video(frames, f"{self.tot_steps + 1}.mp4")
+                    logger.log_video(frames, f"{self.tot_steps + 1}.mp4")
                     eval = False
 
                 if next_eval:
@@ -157,7 +165,7 @@ class Trainer:
                 # get cnnlstm metrics
                 cnnlstm_metrics = p_ptpol.update_cnnlstm(batch)
 
-                self.logger.log_scalar(
+                logger.log_scalar(
                     "CNNLSTM/Loss",
                     cnnlstm_metrics["cnnlstm_loss"],
                     self.tot_steps
@@ -165,22 +173,22 @@ class Trainer:
 
                 c_metrics = p_ptpol.update_critic(batch, ac_mask)
 
-                self.logger.log_scalar(
+                logger.log_scalar(
                     "Critic/Loss 1",
                     c_metrics["c1_loss"],
                     self.tot_steps
                 )
-                self.logger.log_scalar(
+                logger.log_scalar(
                     "Critic/Loss 2",
                     c_metrics["c2_loss"],
                     self.tot_steps
                 )
-                self.logger.log_scalar(
+                logger.log_scalar(
                     "Critic/Q Value 1",
                     c_metrics["q1_vals"],
                     self.tot_steps
                 )
-                self.logger.log_scalar(
+                logger.log_scalar(
                     "Critic/Q Value 2",
                     c_metrics["q2_vals"],
                     self.tot_steps
@@ -194,60 +202,60 @@ class Trainer:
                 ):
                     a_metrics = p_ptpol.update_actor(batch, ac_mask)
 
-                    self.logger.log_scalar(
+                    logger.log_scalar(
                         "Actor/Loss",
                         a_metrics["actor_loss"],
                         self.tot_steps
                     )
 
-                    self.logger.log_scalar(
+                    logger.log_scalar(
                         "Actor/Type Entropy",
                         a_metrics["type_entropy"],
                         self.tot_steps
                     )
-                    self.logger.log_scalar(
+                    logger.log_scalar(
                         "Actor/Pos Entropy",
                         a_metrics["pos_entropy"],
                         self.tot_steps
                     )
 
-                    self.logger.log_scalar(
+                    logger.log_scalar(
                         "Actor/Type Alpha Value",
                         a_metrics["type_alpha"],
                         self.tot_steps
                     )
-                    self.logger.log_scalar(
+                    logger.log_scalar(
                         "Actor/Pos Alpha Value",
                         a_metrics["pos_alpha"],
                         self.tot_steps
                     )
-                    self.logger.log_scalar(
+                    logger.log_scalar(
                         "Actor/Type Alpha Loss",
                         a_metrics["type_alpha_loss"],
                         self.tot_steps
                     )
-                    self.logger.log_scalar(
+                    logger.log_scalar(
                         "Actor/Pos Alpha Loss",
                         a_metrics["pos_alpha_loss"],
                         self.tot_steps
                     )
 
-                    self.logger.log_scalar(
+                    logger.log_scalar(
                         "Position/X Mean",
                         a_metrics["means_x"],
                         self.tot_steps
                     )
-                    self.logger.log_scalar(
+                    logger.log_scalar(
                         "Position/X Std",
                         a_metrics["stds_x"],
                         self.tot_steps
                     )
-                    self.logger.log_scalar(
+                    logger.log_scalar(
                         "Position/Y Mean",
                         a_metrics["means_y"],
                         self.tot_steps
                     )
-                    self.logger.log_scalar(
+                    logger.log_scalar(
                         "Position/Y Std",
                         a_metrics["stds_y"],
                         self.tot_steps
@@ -258,9 +266,10 @@ class Trainer:
 
             if self.tot_steps % consts.SAVE_EVERY == 0:
                 print("Saving...")
-                self.logger.save_models(
+                logger.save_models(
                     p_ptpol, e_ptpol, self.tot_steps, pretrain=True
                 )
+                logger.save_rebuff(rebuff, self.tot_steps, pretrain=True)
                 print()
 
             if (
@@ -536,6 +545,7 @@ class Trainer:
             game.clock.tick(consts.FPS)
 
         game.quit()
+# 20250607-173016"
 
 
 trainer = Trainer()
