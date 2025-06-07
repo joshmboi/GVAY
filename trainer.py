@@ -12,7 +12,7 @@ from logger import Logger
 class Trainer:
     def __init__(self):
         self.tot_steps = 0
-        self.max_steps = 1000000
+        self.max_steps = consts.TOTAL_ITERS
         self.critic_updates = 0
 
         self.logger = Logger(name="sac")
