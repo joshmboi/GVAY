@@ -277,7 +277,7 @@ class Trainer:
                 self.tot_steps != 0
             ):
                 print("Updating Enemy...")
-                self.e_ptpol.update_policy(p_ptpol)
+                e_ptpol.update_policy(p_ptpol)
                 print()
 
             # increment steps
