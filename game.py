@@ -41,13 +41,21 @@ class Game:
         pygame.init()
         self.disp = pygame.display.set_mode((self.disp_w, self.disp_h))
 
-    def reset(self):
+    def reset(self, swap=False):
         # init clock
         self.clock = pygame.time.Clock()
 
+        # set x and y of player and enemy
+        if not swap:
+            p_x, p_y = self.disp_w // 4, self.disp_h // 2
+            e_x, e_y = (3 * self.disp_w) // 4, self.disp_h // 2
+        else:
+            p_x, p_y = (3 * self.disp_w) // 4, self.disp_h // 2
+            e_x, e_y = self.disp_w // 4, self.disp_h // 2
+
         # reset players
-        self.player.reset()
-        self.enemy.reset()
+        self.player.reset(p_x, p_y)
+        self.enemy.reset(e_x, e_y)
 
         # reset frame
         self.frame = 0

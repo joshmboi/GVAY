@@ -22,8 +22,8 @@ class Trainer:
 
     def pretrain(self, max_ep_len=1080):
         # init ac_mask and game
-        ac_mask = [1, 1, 1, 1, 1]
-        e_ac_mask = [1, 1, 1, 1, 1]
+        ac_mask = [1, 1, 1, 0, 0]
+        e_ac_mask = [1, 1, 1, 0, 0]
         game = Game(training=True)
         p_ptpol = PTPolicy(player=True, training=True)
         e_ptpol = PTPolicy(player=False, training=False)
@@ -292,13 +292,16 @@ class Trainer:
         # rendering flags
         render = True
         next_render = True
+
+        # whether to swap player and enemy position
+        swap = False
         while self.tot_steps < self.max_steps:
             if done:
                 # initialize steps and frames
                 steps = 1
 
                 # get initial game state
-                ob = game.reset()
+                ob = game.reset(swap=(eval or swap))
 
                 # initialize reward accumulation
                 tot_p_rew, tot_e_rew = 0.0, 0.0
@@ -404,6 +407,9 @@ class Trainer:
                 if next_render:
                     render = True
                     next_render = False
+
+                # swap positions
+                swap = not swap
 
             if (
                 steps % consts.FPA == 0 and

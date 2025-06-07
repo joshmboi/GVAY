@@ -57,12 +57,17 @@ class Agent:
         self.health = self.max_health
         self.health_reg = 1
 
-    def reset(self):
+    def reset(self, x, y):
         # position and desired position
-        self.x = self.init_x
-        self.y = self.init_y
-        self.des_x = self.init_x
-        self.des_y = self.init_y
+        if x is None or y is None:
+            self.x = self.init_x
+            self.y = self.init_y
+        else:
+            self.x = x
+            self.y = y
+
+        self.des_x = self.x
+        self.des_y = self.y
 
         # speed and angle
         self.speed = 0
