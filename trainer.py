@@ -201,8 +201,13 @@ class Trainer:
                     )
 
                     self.logger.log_scalar(
-                        "Actor/Entropy",
-                        a_metrics["entropy"],
+                        "Actor/Type Entropy",
+                        a_metrics["type_entropy"],
+                        self.tot_steps
+                    )
+                    self.logger.log_scalar(
+                        "Actor/Pos Entropy",
+                        a_metrics["pos_entropy"],
                         self.tot_steps
                     )
 
