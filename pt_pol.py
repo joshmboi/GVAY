@@ -224,8 +224,9 @@ class PTPolicy:
         q2s = self.c2(states, acs)
 
         # type log probs
-        type_log_prob = F.log_softmax(logits, dim=-1)
-        type_entropy = -(type_probs * type_log_prob).sum(dim=-1, keepdim=True)
+        type_log_probs = F.log_softmax(logits, dim=-1)
+        type_log_prob = (type_probs * type_log_probs).sum(dim=-1, keepdim=True)
+        type_entropy = -type_log_prob
         print(type_log_prob.shape, type_entropy.shape, type_entropy.mean().item())
 
         # pos log probs
