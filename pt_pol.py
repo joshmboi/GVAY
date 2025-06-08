@@ -93,9 +93,7 @@ class PTPolicy:
             # get prob distribution and sample
             logits = self.get_logits(p_embed, ac_mask)
             type_dist = torch.distributions.Categorical(logits=logits)
-            print(type_dist.sample().squeeze(0).shape)
             ac_idx = type_dist.sample().squeeze(0).cpu().numpy()
-            print(ac_idx)
 
             # get position
             pos_dist = torch.distributions.Normal(ac_pos_mean, ac_pos_std)
