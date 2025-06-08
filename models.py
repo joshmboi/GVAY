@@ -108,11 +108,7 @@ class ActorModule(nn.Module):
         )
         ac_pos_std = torch.cat((ac_pos_std_x, ac_pos_std_y), dim=-1)
 
-        # noise
-        ac_pos_eps = torch.randn_like(ac_pos_std)
-        ac_pos_raw = ac_pos_mean + ac_pos_std * ac_pos_eps
-
-        return ac_embed, ac_pos_raw, (ac_pos_mean, ac_pos_std)
+        return ac_embed, (ac_pos_mean, ac_pos_std)
 
 
 class AcEmbed(nn.Module):
@@ -145,9 +141,9 @@ class Actor(nn.Module):
         lstm_out, features, hidden = self.cnnlstm(seq, hidden)
         last_out = lstm_out[:, -1, :]
 
-        ac_embed, ac_pos_raw, ac_stats = self.ac_module(last_out)
+        ac_embed, ac_stats = self.ac_module(last_out)
 
-        return ac_embed, ac_pos_raw, ac_stats, hidden
+        return ac_embed, ac_stats, hidden
 
 
 class CriticModule(nn.Module):

@@ -87,17 +87,19 @@ class PTPolicy:
         with torch.no_grad():
             state = self.make_device_tensor(state).unsqueeze(0)
 
-            # get embed and position
-            p_embed, ac_pos_raw, _ = self.actor(state)
+            # get embed and position dist stats
+            p_embed, (ac_pos_mean, ac_pos_std) = self.actor(state)
 
-            # get prob distribution
+            # get prob distribution and sample
             logits = self.get_logits(p_embed, ac_mask)
-            probs = F.softmax(logits, dim=-1)
+            type_dist = torch.distributions.Categorical(logits=logits)
+            ac_idx = type_dist.sample().cpu().numpy()
 
-            # sample from policy and get embed
-            ac_idx = probs.multinomial(1).item()
+            # get position
+            pos_dist = torch.distributions.Normal(ac_pos_mean, ac_pos_std)
+            ac_pos = torch.sigmoid(pos_dist.sample()).squeeze(0).cpu().numpy()
 
-        return ac_idx, torch.sigmoid(ac_pos_raw).squeeze(0).cpu().numpy()
+        return ac_idx, ac_pos
 
     def update_cnnlstm(self, batch):
         # break open batch
@@ -128,19 +130,24 @@ class PTPolicy:
 
         with torch.no_grad():
             # get next actions, observation embeddings, and q values
-            p_embed_nexts, pos_next_raws, _ = self.actor(n_states)
+            p_embed_nexts, (
+                pos_next_means, pos_next_stds
+            ) = self.actor(n_states)
 
-            # get prob distibution
+            # get dist and use to determine in embedding space
             next_logits = self.get_logits(p_embed_nexts, ac_mask)
-            prob_nexts = F.softmax(next_logits, dim=-1)
-
-            # get embeddings and actual actions
+            type_dist = torch.distributions.Categorical(logits=next_logits)
             ac_embed_weight = self.ac_embed.embedding.weight.detach()
-            ac_embed_nexts = (
-                prob_nexts.unsqueeze(-1) * ac_embed_weight
-            ).sum(dim=1)
+            ac_embed_nexts = type_dist.probs @ ac_embed_weight
+
+            # get dist and use for positions
+            pos_dist = torch.distributions.Normal(
+                pos_next_means, pos_next_stds
+            )
+            ac_pos_nexts = torch.sigmoid(pos_dist.sample())
+
             ac_nexts = torch.cat(
-                [ac_embed_nexts, torch.sigmoid(pos_next_raws)], dim=-1
+                [ac_embed_nexts, torch.sigmoid(ac_pos_nexts)], dim=-1
             )
 
             # calculate q values and target values
@@ -196,33 +203,33 @@ class PTPolicy:
         states = self.make_device_tensor(batch.states)
 
         # get actions
-        p_embed, ac_pos_raws, (
-            ac_pos_means, ac_pos_stds
-        ) = self.actor(states)
+        p_embed, (ac_pos_means, ac_pos_stds) = self.actor(states)
 
-        # get probs and logprobs
+        # get type dist and action embeds
         logits = self.get_logits(p_embed, ac_mask)
-        probs = F.softmax(logits, dim=-1)
-        log_probs = F.log_softmax(logits, dim=-1)
+        type_probs = F.softmax(logits, dim=-1)
+        ac_embeds = type_probs @ self.ac_embed.embedding.weight
 
-        # get embeddings and actual actions
-        ac_embeds = (
-            probs.unsqueeze(-1) * self.ac_embed.embedding.weight
-        ).sum(dim=1)
-        acs = torch.cat(
-            [ac_embeds, torch.sigmoid(ac_pos_raws)], dim=-1
+        # pos dist and sampling
+        pos_dist = torch.distributions.Normal(
+            ac_pos_means, ac_pos_stds
         )
+        ac_pos_raw = pos_dist.rsample()
+
+        # concat for actions
+        acs = torch.cat([ac_embeds, torch.sigmoid(ac_pos_raw)], dim=-1)
 
         # get q value using current critic
         q1s = self.c1(states, acs)
         q2s = self.c2(states, acs)
 
-        # ac_type entropy (Softmax)
-        ac_type_entropy = -(probs * log_probs).sum(dim=-1)
+        # type log probs
+        type_log_prob = F.log_softmax(logits, dim=-1)
+        type_entropy = -(type_probs * type_log_prob).sum(dim=-1)
 
-        # ac_pos entropy (Gaussian)
-        dist = torch.distributions.Normal(ac_pos_means, ac_pos_stds)
-        ac_pos_entropy = dist.entropy().sum(dim=-1)
+        # pos log probs
+        pos_log_prob = pos_dist.log_prob(ac_pos_raw).sum(dim=-1, keepdim=True)
+        pos_entropy = pos_dist.entropy().sum(dim=-1)
 
         # penalize for large means
         pos_center = 0
@@ -230,19 +237,26 @@ class PTPolicy:
 
         # total entropy
         entropy = (
-                self.log_type_alph.exp() * ac_type_entropy +
-                self.log_pos_alph.exp() * ac_pos_entropy
+                self.log_type_alph.exp() * type_entropy +
+                self.log_pos_alph.exp() * pos_entropy
         )
 
         # alpha loss
         type_alpha_loss = -self.log_type_alph.exp() * (
-            ac_type_entropy.detach().mean() - self.type_target_entropy
+            type_entropy.detach().mean() - self.type_target_entropy
         )
         pos_alpha_loss = -self.log_pos_alph.exp() * (
-            ac_pos_entropy.detach().mean() - self.pos_target_entropy
+            pos_entropy.detach().mean() - self.pos_target_entropy
         )
 
-        actor_loss = (-torch.minimum(q1s, q2s) + entropy).mean() + pos_penalty
+        # total log prob
+
+        actor_loss = (
+            (
+                self.log_type_alph.exp() * type_log_prob +
+                self.log_pos_alph.exp() * pos_log_prob
+            ) - torch.minimum(q1s, q2s)
+        ).mean() + pos_penalty
 
         self.actor_opt.zero_grad()
         self.ac_embed_opt.zero_grad()
@@ -263,8 +277,8 @@ class PTPolicy:
             stds = ac_pos_stds.mean(dim=-1)
             type_alpha_mean = self.log_type_alph.exp().mean()
             pos_alpha_mean = self.log_pos_alph.exp().mean()
-            type_entropy_mean = ac_type_entropy.mean()
-            pos_entropy_mean = ac_pos_entropy.mean()
+            type_entropy_mean = type_entropy.mean()
+            pos_entropy_mean = pos_entropy.mean()
 
         metrics = {
             "actor_loss": actor_loss.item(),
