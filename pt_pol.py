@@ -225,11 +225,11 @@ class PTPolicy:
 
         # type log probs
         type_log_prob = F.log_softmax(logits, dim=-1)
-        type_entropy = -(type_probs * type_log_prob).sum(dim=-1)
+        type_entropy = -(type_probs * type_log_prob).sum(dim=-1, keepdim=True)
 
         # pos log probs
         pos_log_prob = pos_dist.log_prob(ac_pos_raw).sum(dim=-1, keepdim=True)
-        pos_entropy = pos_dist.entropy().sum(dim=-1)
+        pos_entropy = pos_dist.entropy().sum(dim=-1, keepdim=True)
 
         # penalize for large means
         pos_center = 0
