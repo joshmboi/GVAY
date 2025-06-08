@@ -21,8 +21,8 @@ class Trainer:
 
     def pretrain(self, max_ep_len=1080, timestamp=None, last_iter=0):
         # init ac_mask and game
-        ac_mask = [1, 1, 1, 0, 0]
-        e_ac_mask = [1, 1, 1, 0, 0]
+        ac_mask = [1, 0, 1, 0, 0]
+        e_ac_mask = [1, 0, 0, 0, 0]
         logger = Logger(name="sac", timestamp=timestamp)
 
         game = Game(training=True)
