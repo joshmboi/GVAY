@@ -54,7 +54,7 @@ class PTPolicy:
             self.type_alph_opt = optim.Adam([self.log_type_alph], lr=lr)
             self.pos_alph_opt = optim.Adam([self.log_pos_alph], lr=lr)
             self.type_target_entropy = 0.7
-            self.pos_target_entropy = -2 * 0.5
+            self.pos_target_entropy = -2
 
     def make_device_tensor(self, arr, dtype=None):
         return torch.as_tensor(arr, dtype=dtype, device=self.device)
