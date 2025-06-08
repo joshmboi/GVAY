@@ -100,12 +100,8 @@ class ActorModule(nn.Module):
         ac_pos_mean_y = self.ac_pos_mean_y(state)
         ac_pos_mean = torch.cat((ac_pos_mean_x, ac_pos_mean_y), dim=-1)
 
-        ac_pos_std_x = torch.exp(
-            torch.clamp(self.ac_pos_logstd_x(state), -2, 0.5)
-        )
-        ac_pos_std_y = torch.exp(
-            torch.clamp(self.ac_pos_logstd_x(state), -2, 0.25)
-        )
+        ac_pos_std_x = torch.exp(self.ac_pos_logstd_x(state))
+        ac_pos_std_y = torch.exp(self.ac_pos_logstd_y(state))
         ac_pos_std = torch.cat((ac_pos_std_x, ac_pos_std_y), dim=-1)
 
         # noise
