@@ -94,6 +94,7 @@ class PTPolicy:
             logits = self.get_logits(p_embed, ac_mask)
             type_dist = torch.distributions.Categorical(logits=logits)
             ac_idx = type_dist.sample().cpu().numpy()
+            print(ac_idx.shape)
 
             # get position
             pos_dist = torch.distributions.Normal(ac_pos_mean, ac_pos_std)
@@ -227,12 +228,10 @@ class PTPolicy:
         type_log_probs = F.log_softmax(logits, dim=-1)
         type_log_prob = (type_probs * type_log_probs).sum(dim=-1, keepdim=True)
         type_entropy = -type_log_prob
-        print(type_log_prob.shape, type_entropy.shape, type_entropy.mean().item())
 
         # pos log probs
         pos_log_prob = pos_dist.log_prob(ac_pos_raw).sum(dim=-1, keepdim=True)
         pos_entropy = pos_dist.entropy().sum(dim=-1, keepdim=True)
-        print(pos_log_prob.shape, pos_entropy.shape, pos_entropy.mean().item())
 
         # penalize for large means
         pos_center = 0
