@@ -21,7 +21,7 @@ class Trainer:
 
     def pretrain(self, max_ep_len=1080, timestamp=None, last_iter=0):
         # init ac_mask and game
-        ac_mask = [1, 0, 1, 0, 0]
+        ac_mask = [0, 0, 1, 0, 0]
         e_ac_mask = [1, 0, 0, 0, 0]
         logger = Logger(name="sac", timestamp=timestamp)
 
@@ -264,7 +264,10 @@ class Trainer:
             if self.tot_steps % consts.ITERS_PER_EVAL == 0:
                 next_eval = True
 
-            if self.tot_steps % consts.SAVE_EVERY == 0:
+            if (
+                self.tot_steps % consts.SAVE_EVERY == 0 and
+                self.tot_steps != last_iter
+            ):
                 print("Saving...")
                 logger.save_models(
                     p_ptpol, e_ptpol, self.tot_steps, pretrain=True
