@@ -15,7 +15,7 @@ elif torch.backends.mps.is_available() and torch.backends.mps.is_built():
 else:
     DEVICE = "cpu"
 print(DEVICE)
-REBUFF_SIZE = 20000
+REBUFF_SIZE = 50000
 BATCH_SIZE = 256
 
 # number of iterations for things

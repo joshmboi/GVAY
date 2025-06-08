@@ -53,8 +53,8 @@ class PTPolicy:
         if self.training:
             self.type_alph_opt = optim.Adam([self.log_type_alph], lr=lr)
             self.pos_alph_opt = optim.Adam([self.log_pos_alph], lr=lr)
-            self.type_target_entropy = 0.7
-            self.pos_target_entropy = -2
+            self.type_target_entropy = 1.069
+            self.pos_target_entropy = 0
 
     def make_device_tensor(self, arr, dtype=None):
         return torch.as_tensor(arr, dtype=dtype, device=self.device)
@@ -235,16 +235,12 @@ class PTPolicy:
         )
 
         # alpha loss
-        type_alpha_loss = -(
-                self.log_type_alph.exp() * (
-                    ac_type_entropy - self.type_target_entropy
-                ).detach()
-        ).mean()
-        pos_alpha_loss = -(
-                self.log_pos_alph.exp() * (
-                    ac_pos_entropy - self.pos_target_entropy
-                ).detach()
-        ).mean()
+        type_alpha_loss = -self.log_type_alph.exp() * (
+            ac_type_entropy.detach().mean() - self.type_target_entropy
+        )
+        pos_alpha_loss = -self.log_pos_alph.exp() * (
+            ac_pos_entropy.detach().mean() - self.pos_target_entropy
+        )
 
         actor_loss = (-torch.minimum(q1s, q2s) + entropy).mean() + pos_penalty
 
