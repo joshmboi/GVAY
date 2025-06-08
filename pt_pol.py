@@ -53,7 +53,7 @@ class PTPolicy:
         if self.training:
             self.type_alph_opt = optim.Adam([self.log_type_alph], lr=lr)
             self.pos_alph_opt = optim.Adam([self.log_pos_alph], lr=lr)
-            self.type_target_entropy = 1.069
+            self.type_target_entropy = -1.069
             self.pos_target_entropy = 2.0
 
     def make_device_tensor(self, arr, dtype=None):
@@ -244,10 +244,10 @@ class PTPolicy:
 
         # alpha loss
         type_alpha_loss = -self.log_type_alph.exp() * (
-            type_entropy.detach().mean() - self.type_target_entropy
+            type_entropy.detach().mean() + self.type_target_entropy
         )
         pos_alpha_loss = -self.log_pos_alph.exp() * (
-            pos_entropy.detach().mean() - self.pos_target_entropy
+            pos_entropy.detach().mean() + self.pos_target_entropy
         )
 
         # total log prob
