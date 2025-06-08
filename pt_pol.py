@@ -226,7 +226,7 @@ class PTPolicy:
 
         # penalize for large means
         pos_center = 0
-        pos_penalty = 1e-4 * ((ac_pos_means - pos_center) ** 2).mean()
+        pos_penalty = 1e-3 * ((ac_pos_means - pos_center) ** 2).mean()
 
         # total entropy
         entropy = (
@@ -246,7 +246,7 @@ class PTPolicy:
                 ).detach()
         ).mean()
 
-        actor_loss = (-torch.minimum(q1s, q2s) + entropy).mean()  # + pos_penalty
+        actor_loss = (-torch.minimum(q1s, q2s) + entropy).mean() + pos_penalty
 
         self.actor_opt.zero_grad()
         self.ac_embed_opt.zero_grad()
