@@ -1,5 +1,4 @@
 import copy
-import numpy as np
 import torch
 import torch.optim as optim
 import torch.nn.functional as F
@@ -48,7 +47,7 @@ class PTPolicy:
             0.0, requires_grad=True, device=self.device
         )
         self.log_pos_alph = torch.tensor(
-            0.25, requires_grad=True, device=self.device
+            0.0, requires_grad=True, device=self.device
         )
 
         if self.training:
@@ -261,7 +260,7 @@ class PTPolicy:
                 self.log_type_alph.exp() * type_log_prob +
                 self.log_pos_alph.exp() * pos_log_prob
             ) - torch.minimum(q1s, q2s)
-        ).mean() + pos_log_std_penalty
+        ).mean()
 
         self.actor_opt.zero_grad()
         self.ac_embed_opt.zero_grad()
@@ -276,9 +275,6 @@ class PTPolicy:
         self.pos_alph_opt.zero_grad()
         pos_alpha_loss.backward()
         self.pos_alph_opt.step()
-
-        with torch.no_grad():
-            self.log_pos_alph.clamp_(np.log(1e-4), np.log(0.2))
 
         with torch.no_grad():
             means = ac_pos_means.mean(dim=-1)
