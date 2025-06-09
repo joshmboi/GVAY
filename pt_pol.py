@@ -19,12 +19,12 @@ class PTPolicy:
         # init actor and hidden state
         self.actor = ActorModule(pretrain=True).to(self.device)
         if self.training:
-            self.actor_opt = optim.Adam(self.actor.parameters(), lr=1e-4)
+            self.actor_opt = optim.Adam(self.actor.parameters(), lr=1e-5)
 
         # action embedding
         self.ac_embed = AcEmbed().to(self.device)
         if self.training:
-            self.ac_embed_opt = optim.Adam(self.ac_embed.parameters(), lr=lr)
+            self.ac_embed_opt = optim.Adam(self.ac_embed.parameters(), lr=1e-5)
 
         if self.training:
             # init cnnlstm
@@ -51,8 +51,8 @@ class PTPolicy:
         )
 
         if self.training:
-            self.type_alph_opt = optim.Adam([self.log_type_alph], lr=lr)
-            self.pos_alph_opt = optim.Adam([self.log_pos_alph], lr=lr)
+            self.type_alph_opt = optim.Adam([self.log_type_alph], lr=1e-4)
+            self.pos_alph_opt = optim.Adam([self.log_pos_alph], lr=1e-4)
             self.type_target_entropy = 0
             self.pos_target_entropy = -1.0
 
