@@ -124,7 +124,7 @@ class PTPolicy:
     def update_critic(self, batch, ac_mask, gamma=0.99, tau=0.005):
         # break open batch
         states = self.make_device_tensor(batch.states)
-        ac_idxs = self.make_device_tensor(batch.ac_idxs)
+        ac_idxs = self.make_device_tensor(batch.ac_idxs, dtype=torch.long)
         ac_poses = self.make_device_tensor(batch.ac_poses)
         rews = self.make_device_tensor(batch.rews)
         n_states = self.make_device_tensor(batch.n_states)
