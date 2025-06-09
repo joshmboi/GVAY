@@ -47,7 +47,7 @@ class PTPolicy:
             0.0, requires_grad=True, device=self.device
         )
         self.log_pos_alph = torch.tensor(
-            0.0, requires_grad=True, device=self.device
+            0.25, requires_grad=True, device=self.device
         )
 
         if self.training:
