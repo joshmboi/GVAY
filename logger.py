@@ -71,17 +71,28 @@ class Logger:
     def save_models(self, p_pol, e_pol, iter, pretrain=False):
         if pretrain:
             torch.save({
-                "p_actor": p_pol.actor.state_dict(),
-                "p_ac_embed": p_pol.ac_embed.state_dict(),
                 "cnnlstm": p_pol.cnnlstm.state_dict(),
                 "c1": p_pol.c1.state_dict(),
                 "c2": p_pol.c2.state_dict(),
-                "actor_opt": p_pol.actor_opt.state_dict(),
+                "tc1": p_pol.tc1.state_dict(),
+                "tc2": p_pol.tc2.state_dict(),
+                "p_actor": p_pol.actor.state_dict(),
+                "p_ac_embed": p_pol.ac_embed.state_dict(),
+                "p_log_type_alph": p_pol.log_type_alph,
+                "p_log_pos_alph": p_pol.log_pos_alph,
                 "c1_opt": p_pol.c1_opt.state_dict(),
                 "c2_opt": p_pol.c2_opt.state_dict(),
                 "ac_embed_opt": p_pol.ac_embed_opt.state_dict(),
+                "actor_opt": p_pol.actor_opt.state_dict(),
+                "p_type_alph_opt": p_pol.type_alph_opt.state_dict(),
+                "p_pos_alph_opt": p_pol.pos_alph_opt.state_dict(),
+
                 "e_actor": e_pol.actor.state_dict(),
                 "e_ac_embed": e_pol.ac_embed.state_dict(),
+                "e_log_type_alph": e_pol.log_type_alph,
+                "e_log_pos_alph": e_pol.log_pos_alph,
+                "e_type_alph_opt": e_pol.type_alph_opt.state_dict(),
+                "e_pos_alph_opt": e_pol.pos_alph_opt.state_dict(),
                 "iteration": iter
             }, os.path.join(self.model_path, f"model_{iter}.pth"))
         else:
@@ -103,28 +114,38 @@ class Logger:
             filepath, map_location=consts.DEVICE, weights_only=True
         )
         if pretrain:
-            p_pol.actor.load_state_dict(params["p_actor"]),
-            p_pol.ac_embed.load_state_dict(params["p_ac_embed"]),
-            p_pol.cnnlstm.load_state_dict(params["cnnlstm"]),
-            p_pol.c1.load_state_dict(params["c1"]),
-            p_pol.c2.load_state_dict(params["c2"]),
-            p_pol.actor_opt.load_state_dict(params["actor_opt"]),
-            p_pol.c1_opt.load_state_dict(params["c1_opt"]),
-            p_pol.c2_opt.load_state_dict(params["c2_opt"]),
-            p_pol.ac_embed_opt.load_state_dict(params["ac_embed_opt"]),
-            e_pol.actor.load_state_dict(params["e_actor"]),
-            e_pol.ac_embed.load_state_dict(params["e_ac_embed"]),
+            p_pol.cnnlstm.load_state_dict(params["cnnlstm"])
+            p_pol.c1.load_state_dict(params["c1"])
+            p_pol.c2.load_state_dict(params["c2"])
+            p_pol.tc1.load_state_dict(params["tc1"])
+            p_pol.tc2.load_state_dict(params["tc2"])
+            p_pol.actor.load_state_dict(params["p_actor"])
+            p_pol.ac_embed.load_state_dict(params["p_ac_embed"])
+            p_pol.log_type_alph = params["p_log_type_alph"]
+            p_pol.log_pos_alph = params["p_log_pos_alph"]
+            p_pol.c1_opt.load_state_dict(params["c1_opt"])
+            p_pol.c2_opt.load_state_dict(params["c2_opt"])
+            p_pol.actor_opt.load_state_dict(params["actor_opt"])
+            p_pol.ac_embed_opt.load_state_dict(params["ac_embed_opt"])
+            p_pol.type_alph_opt.load_state_dict(params["type_alph_opt"])
+            p_pol.pos_alph_opt.load_state_dict(params["pos_alph_opt"])
+
+            e_pol.actor.load_state_dict(params["e_actor"])
+            e_pol.ac_embed.load_state_dict(params["e_ac_embed"])
+            e_pol.log_type_alph = params["e_log_type_alph"]
+            e_pol.log_pos_alph = params["e_log_pos_alph"]
+
         else:
-            p_pol.actor.load_state_dict(params["p_actor"]),
-            p_pol.critic.load_state_dict(params["p_critic"]),
-            p_pol.ac_embed.load_state_dict(params["p_ac_embed"]),
-            p_pol.actor_optimizer.load_state_dict(params["p_actor_optim"]),
-            p_pol.critic_optimizer.load_state_dict(params["p_critic_optim"]),
+            p_pol.actor.load_state_dict(params["p_actor"])
+            p_pol.critic.load_state_dict(params["p_critic"])
+            p_pol.ac_embed.load_state_dict(params["p_ac_embed"])
+            p_pol.actor_optimizer.load_state_dict(params["p_actor_optim"])
+            p_pol.critic_optimizer.load_state_dict(params["p_critic_optim"])
             p_pol.ac_embed_optimizer.load_state_dict(
                 params["p_ac_embed_optim"]
-            ),
-            e_pol.actor.load_state_dict(params["e_actor"]),
-            e_pol.ac_embed.load_state_dict(params["e_ac_embed"]),
+            )
+            e_pol.actor.load_state_dict(params["e_actor"])
+            e_pol.ac_embed.load_state_dict(params["e_ac_embed"])
 
     def close(self):
         self.writer.close()
