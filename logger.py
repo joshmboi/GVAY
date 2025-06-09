@@ -84,8 +84,8 @@ class Logger:
                 "c2_opt": p_pol.c2_opt.state_dict(),
                 "ac_embed_opt": p_pol.ac_embed_opt.state_dict(),
                 "actor_opt": p_pol.actor_opt.state_dict(),
-                "p_type_alph_opt": p_pol.type_alph_opt.state_dict(),
-                "p_pos_alph_opt": p_pol.pos_alph_opt.state_dict(),
+                "type_alph_opt": p_pol.type_alph_opt.state_dict(),
+                "pos_alph_opt": p_pol.pos_alph_opt.state_dict(),
 
                 "e_actor": e_pol.actor.state_dict(),
                 "e_ac_embed": e_pol.ac_embed.state_dict(),
