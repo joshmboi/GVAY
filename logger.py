@@ -1,11 +1,13 @@
 from torch.utils.tensorboard import SummaryWriter
 import cv2
 import os
-import pickle
+import np
 import torch
 import time
 
 import consts as consts
+
+from replaybuffer import ReplayBuffer
 
 
 class Logger:
@@ -47,24 +49,25 @@ class Logger:
         out.release()
 
     def save_rebuff(self, rebuff, iter, pretrain=False):
+        rebuff_npz = rebuff.to_numpy_dict()
         filepath = os.path.join(
             self.model_path,
-            f"rebuff_{iter}_{'pretrain' if pretrain else 'non'}.pkl"
+            f"rebuff_{iter}_{'pretrain' if pretrain else 'non'}.npz"
         )
 
         # save file
-        with open(filepath, "wb") as f:
-            pickle.dump(rebuff, f)
+        np.savez_compressed(filepath, **rebuff_npz)
 
     def load_rebuff(self, iter, pretrain=False):
         filepath = os.path.join(
             self.model_path,
-            f"rebuff_{iter}_{'pretrain' if pretrain else 'non'}.pkl"
+            f"rebuff_{iter}_{'pretrain' if pretrain else 'non'}.npz"
         )
 
         # load file
-        with open(filepath, "rb") as f:
-            rebuff = pickle.load(f)
+        loaded = np.load(filepath, allow_pickle=True)
+        rebuff_npz_dict = {key: loaded[key] for key in loaded.files}
+        rebuff = ReplayBuffer.from_numpy_dict(rebuff_npz_dict)
 
         return rebuff
 

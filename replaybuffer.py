@@ -132,23 +132,68 @@ class ReplayBuffer:
         if self.pretrain:
             obs, states, ac_idxs, ac_poses, rews, n_states, dones = zip(*batch)
             return PTBatch(
-                np.array(obs),
-                np.array(states),
-                np.array(ac_idxs),
-                np.array(ac_poses),
-                np.array(rews).astype(np.float32),
-                np.array(n_states),
-                np.array(dones)
+                np.array(obs, dtype=(
+                        np.uint8 if self.obs and
+                        self.obs[0].dtype == np.uint8 else np.float32
+                )),
+                np.array(states, dtype=np.float32),
+                np.array(ac_idxs, dtype=np.uint8),
+                np.array(ac_poses, dtype=np.float32),
+                np.array(rews, dtype=np.float32),
+                np.array(n_states, dtype=np.float32),
+                np.array(dones, dtype=np.bool)
             )
         obs, ac_idxs, ac_poses, rews, nobs, dones = zip(*batch)
         return Batch(
-            np.array(obs),
-            np.array(ac_idxs),
-            np.array(ac_poses),
-            np.array(rews).astype(np.float32),
-            np.array(nobs),
-            np.array(dones)
+            np.array(obs, dtype=(
+                np.uint8 if self.obs and
+                self.obs[0].dtype == np.uint8 else np.float32
+            )),
+            np.array(ac_idxs, dtype=np.uint8),
+            np.array(ac_poses, dtype=np.float32),
+            np.array(rews, dtype=np.float32),
+            np.array(nobs, dtype=(
+                    np.uint8 if self.obs and
+                    self.obs[0].dtype == np.uint8 else np.float32
+            )),
+            np.array(dones, dtype=np.bool)
         )
+
+    def to_numpy_dict(self):
+        return {
+            "obs": np.array(self.obs, dtype=(
+                np.uint8 if self.obs and
+                self.obs[0].dtype == np.uint8 else np.float32
+            )),
+            "ac_idxs": np.array(self.ac_idxs, dtype=np.int32),
+            "ac_poses": np.array(self.ac_poses, dtype=np.float32),
+            "rews": np.array(self.rews, dtype=np.float32),
+            "dones": np.array(self.dones, dtype=np.bool_),
+            "inds": np.array(self.inds, dtype=np.int32),
+            "states": np.array(
+                self.states, dtype=np.float32
+            ) if self.pretrain else None,
+            "cap": self.cap,
+            "window": self.window,
+            "fpa": self.fpa,
+            "pretrain": self.pretrain,
+        }
+
+    @classmethod
+    def from_numpy_dict(cls, data):
+        rebuff = cls(
+            cap=data["cap"], window=data["window"],
+            fpa=data["fpa"], pretrain=data["pretrain"]
+        )
+        rebuff.obs = deque(data["obs"])
+        rebuff.ac_idxs = deque(data["ac_idxs"])
+        rebuff.ac_poses = deque(data["ac_poses"])
+        rebuff.rews = deque(data["rews"])
+        rebuff.dones = deque(data["dones"])
+        rebuff.inds = list(data["inds"])
+        if data["pretrain"]:
+            rebuff.states = deque(data["states"])
+        return rebuff
 
     def __len__(self):
         return max(len(self.ac_idxs) - 1, 0)
