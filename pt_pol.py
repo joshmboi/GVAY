@@ -260,7 +260,7 @@ class PTPolicy:
                 self.log_type_alph.exp() * type_log_prob +
                 self.log_pos_alph.exp() * pos_log_prob
             ) - torch.minimum(q1s, q2s)
-        ).mean() + pos_means_penalty
+        ).mean() + pos_log_std_penalty
 
         self.actor_opt.zero_grad()
         self.ac_embed_opt.zero_grad()
