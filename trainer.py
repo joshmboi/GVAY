@@ -33,6 +33,8 @@ class Trainer:
         rebuff = ReplayBuffer(cap=consts.REBUFF_SIZE, pretrain=True)
 
         if timestamp is not None:
+            print(f"Loading from {timestamp} at {last_iter}...")
+            print()
             logger.load_models(p_ptpol, e_ptpol, iter=last_iter, pretrain=True)
             self.tot_steps = last_iter
             self.iters = last_iter
@@ -530,25 +532,24 @@ class Trainer:
             self.tot_steps += 1
 
     def sim(self):
-        game = Game(training=False, ac_mask=self.ac_mask)
+        game = Game(training=False)
         ob = game.reset()
 
         p_pol = Policy(player=False, training=False)
-        p_pol.load_policy("./runs/pol/models/model_40000.pth")
+        # p_pol.load_policy("./runs/pol/models/model_40000.pth")
 
         done = False
         while not done:
-            if game.frame % consts.FPA == 0:
-                p_ac = p_pol.get_action(ob["player"], [0, 0, 1, 0, 0])
+            # if game.frame % consts.FPA == 0:
+                # p_ac = p_pol.get_action(ob["player"], [0, 0, 1, 0, 0])
             ob, _, _, done, info = game.step(
-                playing=True, state_train=True, p_ac=p_ac, e_ac=None
+                playing=True,  # state_train=True, p_ac=p_ac, e_ac=None
             )
             if done:
                 game.game_over()
             game.clock.tick(consts.FPS)
 
         game.quit()
-# 20250607-173016"
 
 
 trainer = Trainer()
