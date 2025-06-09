@@ -235,8 +235,9 @@ class PTPolicy:
         pos_entropy = pos_dist.entropy().sum(dim=-1, keepdim=True)
 
         # penalize for large means
-        pos_center = 0
-        pos_penalty = 1e-3 * ((ac_pos_means - pos_center) ** 2).mean()
+        pos_means_center = 0
+        pos_means_penalty = 1e-3 * ((ac_pos_means - pos_means_center) ** 2).mean()
+        pos_log_std_penalty = 1e-3 * (ac_pos_stds ** 2).mean()
 
         # total entropy
         entropy = (
@@ -259,7 +260,7 @@ class PTPolicy:
                 self.log_type_alph.exp() * type_log_prob +
                 self.log_pos_alph.exp() * pos_log_prob
             ) - torch.minimum(q1s, q2s)
-        ).mean()  # + pos_penalty
+        ).mean() + pos_means_penalty
 
         self.actor_opt.zero_grad()
         self.ac_embed_opt.zero_grad()
