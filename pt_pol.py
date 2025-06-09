@@ -1,4 +1,5 @@
 import copy
+import numpy as np
 import torch
 import torch.optim as optim
 import torch.nn.functional as F
@@ -275,6 +276,9 @@ class PTPolicy:
         self.pos_alph_opt.zero_grad()
         pos_alpha_loss.backward()
         self.pos_alph_opt.step()
+
+        with torch.no_grad():
+            self.log_pos_alph.clamp_(np.log(1e-4), np.log(0.2))
 
         with torch.no_grad():
             means = ac_pos_means.mean(dim=-1)
