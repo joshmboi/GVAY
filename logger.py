@@ -91,8 +91,6 @@ class Logger:
                 "e_ac_embed": e_pol.ac_embed.state_dict(),
                 "e_log_type_alph": e_pol.log_type_alph,
                 "e_log_pos_alph": e_pol.log_pos_alph,
-                "e_type_alph_opt": e_pol.type_alph_opt.state_dict(),
-                "e_pos_alph_opt": e_pol.pos_alph_opt.state_dict(),
                 "iteration": iter
             }, os.path.join(self.model_path, f"model_{iter}.pth"))
         else:
@@ -134,7 +132,6 @@ class Logger:
             e_pol.ac_embed.load_state_dict(params["e_ac_embed"])
             e_pol.log_type_alph = params["e_log_type_alph"]
             e_pol.log_pos_alph = params["e_log_pos_alph"]
-
         else:
             p_pol.actor.load_state_dict(params["p_actor"])
             p_pol.critic.load_state_dict(params["p_critic"])

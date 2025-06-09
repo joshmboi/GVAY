@@ -75,6 +75,8 @@ class PTPolicy:
     def update_policy(self, other_policy):
         self.actor.load_state_dict(other_policy.actor.state_dict())
         self.ac_embed.load_state_dict(other_policy.ac_embed.state_dict())
+        self.log_type_alph = other_policy.log_type_alph
+        self.log_pos_alph = other_policy.log_type_alph
 
     def update_cnnlstm_hidden(self, ob):
         ob = self.make_device_tensor(ob).unsqueeze(0).unsqueeze(0) / 255.0
