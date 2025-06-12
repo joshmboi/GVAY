@@ -8,53 +8,60 @@ from models import CNNLSTM, ActorModule, CriticModule, AcEmbed
 
 
 class PTPolicy:
-    def __init__(self, lr=1e-3, player=True, training=False):
+    def __init__(
+        self, cnnlstm_lr, critic_lr, actor_lr, alpha_lr,
+        player, training, use_entropy
+    ):
         # device
         self.device = consts.DEVICE
 
-        # whether player and whether training
+        # whether player, training, or entropy
         self.player = player
         self.training = training
+        self.use_entropy = use_entropy
 
         # init actor and hidden state
         self.actor = ActorModule(pretrain=True).to(self.device)
-        if self.training:
-            self.actor_opt = optim.Adam(self.actor.parameters(), lr=1e-5)
 
         # action embedding
         self.ac_embed = AcEmbed().to(self.device)
-        if self.training:
-            self.ac_embed_opt = optim.Adam(self.ac_embed.parameters(), lr=1e-5)
 
         if self.training:
+            # actor and ac_embed optimizers
+            self.actor_opt = optim.Adam(self.actor.parameters(), lr=1e-5)
+            self.ac_embed_opt = optim.Adam(self.ac_embed.parameters(), lr=1e-5)
+
             # init cnnlstm
             self.cnnlstm_hidden = None
             self.cnnlstm = CNNLSTM(pretrain=True).to(self.device)
-            self.cnnlstm_opt = optim.Adam(self.cnnlstm.parameters(), lr=lr)
+            self.cnnlstm_opt = optim.Adam(
+                self.cnnlstm.parameters(), lr=cnnlstm_lr
+            )
 
             # init critic
             self.c1 = CriticModule(pretrain=True).to(self.device)
             self.c2 = CriticModule(pretrain=True).to(self.device)
-            self.c1_opt = optim.Adam(self.c1.parameters(), lr=lr)
-            self.c2_opt = optim.Adam(self.c2.parameters(), lr=lr)
+            self.c1_opt = optim.Adam(self.c1.parameters(), lr=critic_lr)
+            self.c2_opt = optim.Adam(self.c2.parameters(), lr=critic_lr)
 
             # target critics
             self.tc1 = copy.deepcopy(self.c1).to(self.device)
             self.tc2 = copy.deepcopy(self.c2).to(self.device)
 
-        # alphas for entropy control
-        self.log_type_alph = torch.tensor(
-            0.0, requires_grad=True, device=self.device
-        )
-        self.log_pos_alph = torch.tensor(
-            0.0, requires_grad=True, device=self.device
-        )
+        if use_entropy:
+            # alphas for entropy control
+            self.log_type_alph = torch.tensor(
+                0.0, requires_grad=True, device=self.device
+            )
+            self.log_pos_alph = torch.tensor(
+                0.0, requires_grad=True, device=self.device
+            )
 
-        if self.training:
-            self.type_alph_opt = optim.Adam([self.log_type_alph], lr=1e-4)
-            self.pos_alph_opt = optim.Adam([self.log_pos_alph], lr=1e-4)
-            self.type_target_entropy = 0
-            self.pos_target_entropy = -1.0
+            if self.training:
+                self.type_alph_opt = optim.Adam([self.log_type_alph], lr=1e-4)
+                self.pos_alph_opt = optim.Adam([self.log_pos_alph], lr=1e-4)
+                self.type_target_entropy = 0
+                self.pos_target_entropy = -1.0
 
     def make_device_tensor(self, arr, dtype=None):
         return torch.as_tensor(arr, dtype=dtype, device=self.device)
@@ -225,42 +232,50 @@ class PTPolicy:
         q1s = self.c1(states, acs)
         q2s = self.c2(states, acs)
 
-        # type log probs
-        type_log_probs = F.log_softmax(logits, dim=-1)
-        type_log_prob = (type_probs * type_log_probs).sum(dim=-1, keepdim=True)
-        type_entropy = -type_log_prob
+        log_prob = 0
+        if self.use_entropy:
+            # type log probs
+            type_log_probs = F.log_softmax(logits, dim=-1)
+            type_log_prob = (
+                type_probs * type_log_probs
+            ).sum(dim=-1, keepdim=True)
+            type_entropy = -type_log_prob
 
-        # pos log probs
-        pos_log_prob = pos_dist.log_prob(ac_pos_raw).sum(dim=-1, keepdim=True)
-        pos_entropy = pos_dist.entropy().sum(dim=-1, keepdim=True)
+            # pos log probs
+            pos_log_prob = pos_dist.log_prob(
+                ac_pos_raw
+            ).sum(dim=-1, keepdim=True)
+            pos_entropy = pos_dist.entropy().sum(dim=-1, keepdim=True)
+
+            # total entropy
+            entropy = (
+                    self.log_type_alph.exp() * type_entropy +
+                    self.log_pos_alph.exp() * pos_entropy
+            )
+            print(entropy)
+
+            # alpha loss
+            type_alpha_loss = -self.log_type_alph.exp() * (
+                type_entropy.detach().mean() + self.type_target_entropy
+            )
+            pos_alpha_loss = -self.log_pos_alph.exp() * (
+                pos_entropy.detach().mean() + self.pos_target_entropy
+            )
+
+            # total log prob
+            log_prob = (
+                self.log_type_alph.exp() * type_log_prob +
+                self.log_pos_alph * pos_log_prob
+            )
 
         # penalize for large means
-        pos_means_center = 0
-        pos_means_penalty = 1e-3 * ((ac_pos_means - pos_means_center) ** 2).mean()
-        pos_log_std_penalty = 1e-3 * (ac_pos_stds ** 2).mean()
+        # pos_means_center = 0
+        # pos_means_penalty = 1e-3 * (
+        #     (ac_pos_means - pos_means_center) ** 2
+        # ).mean()
+        # pos_log_std_penalty = 1e-3 * (ac_pos_stds ** 2).mean()
 
-        # total entropy
-        entropy = (
-                self.log_type_alph.exp() * type_entropy +
-                self.log_pos_alph.exp() * pos_entropy
-        )
-
-        # alpha loss
-        type_alpha_loss = -self.log_type_alph.exp() * (
-            type_entropy.detach().mean() + self.type_target_entropy
-        )
-        pos_alpha_loss = -self.log_pos_alph.exp() * (
-            pos_entropy.detach().mean() + self.pos_target_entropy
-        )
-
-        # total log prob
-
-        actor_loss = (
-            (
-                self.log_type_alph.exp() * type_log_prob +
-                self.log_pos_alph.exp() * pos_log_prob
-            ) - torch.minimum(q1s, q2s)
-        ).mean()
+        actor_loss = (log_prob - torch.minimum(q1s, q2s)).mean()
 
         self.actor_opt.zero_grad()
         self.ac_embed_opt.zero_grad()
@@ -268,35 +283,41 @@ class PTPolicy:
         self.actor_opt.step()
         self.ac_embed_opt.step()
 
-        self.type_alph_opt.zero_grad()
-        type_alpha_loss.backward()
-        self.type_alph_opt.step()
+        if self.use_entropy:
+            self.type_alph_opt.zero_grad()
+            type_alpha_loss.backward()
+            self.type_alph_opt.step()
 
-        self.pos_alph_opt.zero_grad()
-        pos_alpha_loss.backward()
-        self.pos_alph_opt.step()
+            self.pos_alph_opt.zero_grad()
+            pos_alpha_loss.backward()
+            self.pos_alph_opt.step()
 
         with torch.no_grad():
             means = ac_pos_means.mean(dim=-1)
             stds = ac_pos_stds.mean(dim=-1)
-            type_alpha_mean = self.log_type_alph.exp().mean()
-            pos_alpha_mean = self.log_pos_alph.exp().mean()
-            type_entropy_mean = type_entropy.mean()
-            pos_entropy_mean = pos_entropy.mean()
+
+            if self.use_entropy:
+                type_alpha_mean = self.log_type_alph.exp().mean()
+                pos_alpha_mean = self.log_pos_alph.exp().mean()
+                type_entropy_mean = type_entropy.mean()
+                pos_entropy_mean = pos_entropy.mean()
 
         metrics = {
             "actor_loss": actor_loss.item(),
-            "type_alpha": type_alpha_mean,
-            "pos_alpha": pos_alpha_mean,
-            "type_alpha_loss": type_alpha_loss.item(),
-            "pos_alpha_loss": pos_alpha_loss.item(),
-            "type_entropy": type_entropy_mean,
-            "pos_entropy": pos_entropy_mean,
             "means_x": means[0],
             "means_y": means[1],
             "stds_x": stds[0],
             "stds_y": stds[1]
         }
+
+        if self.use_entropy:
+            metrics["type_alpha"] = type_alpha_mean
+            metrics["pos_alpha"] = pos_alpha_mean
+            metrics["type_alpha_loss"] = type_alpha_loss.item()
+            metrics["pos_alpha_loss"] = pos_alpha_loss.item()
+            metrics["type_entropy"] = type_entropy_mean
+            metrics["pos_entropy"] = pos_entropy_mean
+
         return metrics
 
     def load_policy(self, filepath):

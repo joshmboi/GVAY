@@ -109,7 +109,7 @@ class Agent:
             ang=proj_ang,
             rad=self.q_rad,
             max_dist=self.q_dist,
-            speed=40
+            speed=14
         )
         self.projs.append(proj)
 

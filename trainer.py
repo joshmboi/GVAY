@@ -26,8 +26,14 @@ class Trainer:
         logger = Logger(name="sac", timestamp=timestamp)
 
         game = Game(training=True)
-        p_ptpol = PTPolicy(player=True, training=True)
-        e_ptpol = PTPolicy(player=False, training=False)
+        p_ptpol = PTPolicy(
+            cnnlstm_lr=1e-3, critic_lr=1e-3, actor_lr=1e-4, alpha_lr=1e-5,
+            player=True, training=True, use_entropy=False
+        )
+        e_ptpol = PTPolicy(
+            cnnlstm_lr=1e-3, critic_lr=1e-3, actor_lr=1e-4, alpha_lr=1e-5,
+            player=False, training=False, use_entropy=False
+        )
         e_ptpol.update_policy(p_ptpol)
 
         rebuff = ReplayBuffer(cap=consts.REBUFF_SIZE, pretrain=True)
@@ -554,3 +560,4 @@ class Trainer:
 
 trainer = Trainer()
 trainer.pretrain(1080)
+# trainer.sim()
