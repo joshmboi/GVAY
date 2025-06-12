@@ -143,10 +143,16 @@ class Game:
         p_state = [
             player.x / self.disp_w, player.y / self.disp_h,
             p_dx, p_dx,
-            player.health / player.max_health, player.stam / player.max_stam,
-            max(0, (1 - (self.frame - player.q_last_cast) / player.q_cool)),
-            max(0, (1 - (self.frame - player.w_last_cast) / player.w_cool)),
-            max(0, (1 - (self.frame - player.e_last_cast) / player.e_cool)),
+            player.health / consts.MAX_HEALTH, player.stam / consts.MAX_STAM,
+            max(
+                0, (1 - (self.frame - player.q_last_cast) / consts.PROJ_COOL)
+            ),
+            max(
+                0, (1 - (self.frame - player.w_last_cast) / consts.SCORCH_COOL)
+            ),
+            max(
+                0, (1 - (self.frame - player.e_last_cast) / consts.SHIELD_COOL)
+            ),
         ]
 
         # add player projectiles
@@ -185,10 +191,16 @@ class Game:
         e_state = [
             enemy.x / self.disp_w, enemy.y / self.disp_h,
             e_dx, e_dy,
-            enemy.health / enemy.max_health, enemy.stam / enemy.max_stam,
-            max(0, (1 - (self.frame - enemy.q_last_cast) / enemy.q_cool)),
-            max(0, (1 - (self.frame - enemy.w_last_cast) / enemy.w_cool)),
-            max(0, (1 - (self.frame - enemy.e_last_cast) / enemy.e_cool)),
+            enemy.health / consts.MAX_HEALTH, enemy.stam / consts.MAX_STAM,
+            max(
+                0, (1 - (self.frame - enemy.q_last_cast) / consts.PROJ_COOL)
+            ),
+            max(
+                0, (1 - (self.frame - enemy.w_last_cast) / consts.SCORCH_COOL)
+            ),
+            max(
+                0, (1 - (self.frame - enemy.e_last_cast) / consts.SHIELD_COOL)
+            ),
         ]
 
         # add enemy projectiles

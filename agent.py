@@ -9,16 +9,16 @@ from abilities.shield import Shield
 
 
 class Agent:
-    def __init__(self, x, y, speed=6, rad=28):
+    def __init__(self, x, y):
         # position
         self.init_x = x
         self.init_y = y
 
         # radius
-        self.rad = rad
+        self.rad = consts.AGENT_RAD
 
         # speed and angle
-        self.base_speed = speed
+        self.base_speed = consts.AGENT_SPEED
         self.speed = 0
         self.ang = 0
 
@@ -27,35 +27,15 @@ class Agent:
         self.scorch = None
         self.shield = None
 
-        # abilities (frames)
-        self.q_cool = 500 // consts.FPS
-        self.q_last_cast = -self.q_cool
-        self.q_rad = 8
-        self.q_dist = 400
-        self.q_stam = 10
-
-        self.w_cool = 2500 // consts.FPS
-        self.w_last_cast = -self.w_cool
-        self.w_cast_time = 300 // consts.FPS
-        self.w_cast_dist = 200
-        self.w_rad = 60
-        self.w_duration = 2000 // consts.FPS
-        self.w_stam = 20
-
-        self.e_cool = 5000 // consts.FPS
-        self.e_last_cast = -self.e_cool
-        self.e_duration = 1000 // consts.FPS
-        self.e_stam = 35
+        # ability characteristics
+        self.q_last_cast = -consts.PROJ_COOL
+        self.w_last_cast = -consts.SCORCH_COOL
+        self.e_last_cast = -consts.SHIELD_COOL
         self.shield_val = 0
 
-        # stamina and health
-        self.max_stam = 100
-        self.stam = self.max_stam
-        self.stam_reg = 100  # 2
-
-        self.max_health = 200
-        self.health = self.max_health
-        self.health_reg = 1
+        # health n stam
+        self.stam = consts.MAX_STAM
+        self.health = consts.MAX_HEALTH
 
     def reset(self, x, y):
         # position and desired position
@@ -79,13 +59,13 @@ class Agent:
         self.shield = None
 
         # ability cooldowns
-        self.q_last_cast = -self.q_cool
-        self.w_last_cast = -self.w_cool
-        self.e_last_cast = -self.e_cool
+        self.q_last_cast = -consts.PROJ_COOL
+        self.w_last_cast = -consts.SCORCH_COOL
+        self.e_last_cast = -consts.SHIELD_COOL
 
         # stamina and health
-        self.stam = self.max_stam
-        self.health = self.max_health
+        self.stam = consts.MAX_STAM
+        self.health = consts.MAX_HEALTH
 
     def update_des(self, des_x, des_y):
         self.des_x = des_x
@@ -93,52 +73,52 @@ class Agent:
 
     def play_q(self, qx, qy, cur_frame):
         if (
-            cur_frame <= self.q_last_cast + self.q_cool or
-            self.stam < self.q_stam
+            cur_frame <= self.q_last_cast + consts.PROJ_COOL or
+            self.stam < consts.PROJ_STAM
         ):
             return None
 
         # get projectile position and direction
         proj_ang = math.atan2(qy - self.y, qx - self.x)
-        offset = self.rad + self.q_rad
+        offset = self.rad + consts.PROJ_RAD
 
         # add projectile
         proj = Projectile(
             x=self.x + offset * math.cos(proj_ang),
             y=self.y + offset * math.sin(proj_ang),
             ang=proj_ang,
-            rad=self.q_rad,
-            max_dist=self.q_dist,
-            speed=14
+            rad=consts.PROJ_RAD,
+            max_dist=consts.PROJ_DIST,
+            speed=consts.PROJ_SPEED
         )
         self.projs.append(proj)
 
         self.q_last_cast = cur_frame
-        self.stam -= self.q_stam
+        self.stam -= consts.PROJ_STAM
 
     def play_w(self, wx, wy, cur_frame):
         if (
-            cur_frame <= self.w_last_cast + self.w_cool or
-            self.stam < self.w_stam
+            cur_frame <= self.w_last_cast + consts.SCORCH_COOL or
+            self.stam < consts.SCORCH_STAM
         ):
             return None
 
         # check to see if in range of player
-        if math.hypot(self.x - wx, self.y - wy) > self.w_cast_dist:
+        if math.hypot(self.x - wx, self.y - wy) > consts.SCORCH_CASTDIST:
             return None
 
         self.scorch = Scorch(
-            x=wx, y=wy, rad=self.w_rad, birth=cur_frame,
-            cast_time=self.w_cast_time, duration=self.w_duration,
+            x=wx, y=wy, rad=consts.SCORCH_RAD, birth=cur_frame,
+            cast_time=consts.SCORCH_CASTTIME, duration=consts.SCORCH_DURATION
         )
 
         self.w_last_cast = cur_frame
-        self.stam -= self.w_stam
+        self.stam -= consts.SCORCH_STAM
 
     def play_e(self, cur_frame):
         if (
-            cur_frame <= self.e_last_cast + self.e_cool or
-            self.stam < self.e_stam
+            cur_frame <= self.e_last_cast + consts.SHIELD_COOL or
+            self.stam < consts.SHIELD_STAM
         ):
             return None
 
@@ -148,11 +128,11 @@ class Agent:
         # add shield
         self.shield = Shield(
             x=self.x, y=self.y, rad=shield_rad,
-            birth=cur_frame, duration=self.e_duration,
+            birth=cur_frame, duration=consts.SHIELD_DURATION
         )
 
         self.e_last_cast = cur_frame
-        self.stam -= self.e_stam
+        self.stam -= consts.SHIELD_STAM
 
     def take_damage(self, dmg):
         res_dmg = dmg - self.shield_val
@@ -178,9 +158,11 @@ class Agent:
 
         # update stamina and health regen
         self.health = min(
-            self.health + self.health_reg / consts.FPS, self.max_health
+            self.health + consts.HEALTH_REG / consts.FPS, consts.MAX_HEALTH
         )
-        self.stam = min(self.stam + self.stam_reg / consts.FPS, self.max_stam)
+        self.stam = min(
+            self.stam + consts.STAM_REG / consts.FPS, consts.MAX_STAM
+        )
 
         # update projectiles
         for p in self.projs:
@@ -220,32 +202,39 @@ class Agent:
         if self.shield:
             self.shield.draw(screen, palette["e"])
 
-        bar_w = 120
-        health_h = 12
-        stam_h = 4
-        x_pos = int(self.x - bar_w // 2)
-        y_pos = int(self.y - self.rad - health_h - stam_h - 12)
+        x_pos = int(self.x - consts.AGENT_BAR_W // 2)
+        y_pos = int(
+            self.y - consts.AGENT_RAD - consts.AGENT_PAD -
+            consts.HEALTH_H - consts.STAM_H
+        )
 
         # health
         pygame.draw.rect(
-            screen, consts.HEALTH_DARK, (x_pos, y_pos, bar_w, health_h)
+            screen, consts.HEALTH_DARK,
+            (x_pos, y_pos, consts.AGENT_BAR_W, consts.HEALTH_H)
         )
         pygame.draw.rect(
             screen, consts.HEALTH_LIGHT,
             (
                 x_pos, y_pos,
-                int(bar_w * self.health / self.max_health), health_h
+                int(consts.AGENT_BAR_W * self.health / consts.MAX_HEALTH),
+                consts.HEALTH_H
             )
         )
 
         # Stamina bar (below health)
-        y_pos += health_h
+        y_pos += consts.HEALTH_H
         pygame.draw.rect(
-            screen, consts.STAM_DARK, (x_pos, y_pos, bar_w, stam_h)
+            screen, consts.STAM_DARK,
+            (x_pos, y_pos, consts.AGENT_BAR_W, consts.STAM_H)
         )
         pygame.draw.rect(
             screen, consts.STAM_LIGHT,
-            (x_pos, y_pos, int(bar_w * self.stam / self.max_stam), stam_h)
+            (
+                x_pos, y_pos,
+                int(consts.AGENT_BAR_W * self.stam / consts.MAX_STAM),
+                consts.STAM_H
+            )
         )
 
     def draw_ui(self, screen, cur_frame):
@@ -253,21 +242,17 @@ class Agent:
         ab_font = pygame.font.SysFont("Arial", 36)
         bar_font = pygame.font.SysFont("Arial", 24)
 
-        # padding
-        pad = 16
-        bar_pad = 8
-
         # display
         screen_w, screen_h = screen.get_width(), screen.get_height()
 
         # bar sizes
-        bar_w = 520
-        bar_h = 32
-        bar_x = screen_w - bar_w - pad
-        bar_y = screen_h - 2 * (bar_h) - bar_pad - pad
+        bar_x = screen_w - consts.PLAYER_BAR_W - consts.PAD
+        bar_y = (
+            screen_h - 2 * (consts.PLAYER_BAR_H) - consts.BAR_PAD - consts.PAD
+        )
 
         # blank grey background
-        blank_y = bar_y - pad
+        blank_y = bar_y - consts.PAD
         pygame.draw.rect(
             screen, consts.UI_BACKGROUND_COLOR, (
                 0, blank_y, consts.DISP_W, consts.DISP_H - blank_y
@@ -276,68 +261,80 @@ class Agent:
 
         # health bar
         pygame.draw.rect(
-            screen, consts.HEALTH_DARK, (bar_x, bar_y, bar_w, bar_h)
+            screen, consts.HEALTH_DARK,
+            (bar_x, bar_y, consts.PLAYER_BAR_W, consts.PLAYER_BAR_H)
         )
         pygame.draw.rect(
             screen, consts.HEALTH_LIGHT,
-            (bar_x, bar_y, int(bar_w * (self.health / self.max_health)), bar_h)
+            (
+                bar_x, bar_y,
+                int(consts.PLAYER_BAR_W * (self.health / consts.MAX_HEALTH)),
+                consts.PLAYER_BAR_H
+            )
         )
 
         # health number
         h_text = bar_font.render(
-            f"{round(self.health, 1)}/{self.max_health}", True, (0, 0, 0)
+            f"{round(self.health, 1)}/{consts.MAX_HEALTH}", True, (0, 0, 0)
         )
         screen.blit(
             h_text,
             (
-                bar_x + bar_w // 2 - h_text.get_width() // 2,
-                bar_y + bar_h // 2 - h_text.get_height() // 2
+                bar_x + consts.PLAYER_BAR_W // 2 - h_text.get_width() // 2,
+                bar_y + consts.PLAYER_BAR_H // 2 - h_text.get_height() // 2
             )
         )
 
         # stamina bar
-        bar_y += bar_h + bar_pad
+        bar_y += consts.PLAYER_BAR_H + consts.BAR_PAD
         pygame.draw.rect(
-            screen, consts.STAM_DARK, (bar_x, bar_y, bar_w, bar_h)
+            screen, consts.STAM_DARK,
+            (bar_x, bar_y, consts.PLAYER_BAR_W, consts.PLAYER_BAR_H)
         )
         pygame.draw.rect(
             screen, consts.STAM_LIGHT,
-            (bar_x, bar_y, int(bar_w * (self.stam / self.max_stam)), bar_h)
+            (
+                bar_x, bar_y,
+                int(consts.PLAYER_BAR_W * (self.stam / consts.MAX_STAM)),
+                consts.PLAYER_BAR_H
+            )
         )
 
         # stamina number
         s_text = bar_font.render(
-            f"{round(self.stam, 1)}/{self.max_stam}", True, (0, 0, 0)
+            f"{round(self.stam, 1)}/{consts.MAX_STAM}", True, (0, 0, 0)
         )
         screen.blit(
             s_text,
             (
-                bar_x + bar_w // 2 - s_text.get_width() // 2,
-                bar_y + bar_h // 2 - s_text.get_height() // 2
+                bar_x + consts.PLAYER_BAR_W // 2 - s_text.get_width() // 2,
+                bar_y + consts.PLAYER_BAR_H // 2 - s_text.get_height() // 2
             )
         )
 
         # abilities
         abs = [
-            ("Q", self.q_last_cast, self.q_cool),
-            ("W", self.w_last_cast, self.w_cool),
-            ("E", self.e_last_cast, self.e_cool)
+            ("Q", self.q_last_cast, consts.PROJ_COOL),
+            ("W", self.w_last_cast, consts.SCORCH_COOL),
+            ("E", self.e_last_cast, consts.SHIELD_COOL)
         ]
 
         # ability box size and spacing
-        box_size = 48
         box_pad = (
-                (bar_x - len(abs) * box_size) //
+                (bar_x - len(abs) * consts.BOX_SIZE) //
                 (len(abs) + 1)
         )
 
         # position
-        y_pos = screen_h - bar_h - pad - bar_pad // 2 - box_size // 2
+        y_pos = (
+            screen_h - consts.PLAYER_BAR_H - consts.PAD -
+            consts.BAR_PAD // 2 - consts.BOX_SIZE // 2
+        )
         x_start = box_pad
 
         for i, (key, last_cast, cool) in enumerate(abs):
-            x_pos = x_start + i * (box_size + box_pad)
-            rect = pygame.Rect(x_pos, y_pos, box_size, box_size)
+            x_pos = x_start + i * (consts.BOX_SIZE + box_pad)
+            rect = pygame.Rect(x_pos, y_pos, consts.BOX_SIZE, consts.BOX_SIZE)
 
             # background box
             pygame.draw.rect(screen, consts.AB_BACKGROUND, rect)
@@ -347,10 +344,10 @@ class Agent:
             if elapsed < cool:
                 # cooldown overlay
                 percent = elapsed / cool
-                over_height = int(box_size * percent)
+                over_height = int(consts.BOX_SIZE * percent)
                 over = pygame.Rect(
-                    x_pos, y_pos + box_size - over_height,
-                    box_size, over_height
+                    x_pos, y_pos + consts.BOX_SIZE - over_height,
+                    consts.BOX_SIZE, over_height
                 )
                 pygame.draw.rect(screen, consts.AB_COOLDOWN, over)
 
@@ -364,17 +361,17 @@ class Agent:
 
             screen.blit(
                 text, (
-                    x_pos + box_size // 2 - text.get_width() // 2,
-                    y_pos + box_size // 2 - text.get_height() // 2
+                    x_pos + consts.BOX_SIZE // 2 - text.get_width() // 2,
+                    y_pos + consts.BOX_SIZE // 2 - text.get_height() // 2
                 )
             )
 
     def take_action(self, ac_idx, ac_pos, cur_frame):
         # grab action type and action value
         ac_val = np.array(
-            [consts.DISP_W - 120, consts.DISP_H - 104 - 28 * 3]
+            [consts.MAX_X - consts.MIN_X, consts.MAX_Y - consts.MIN_Y]
         ) * ac_pos + np.array(
-                [60, 56]
+                [consts.MIN_X, consts.MIN_Y]
             )
 
         # 0 - nothing, 1 - move, 2 - q, 3 - w, 4 - e

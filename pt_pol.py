@@ -8,10 +8,7 @@ from models import CNNLSTM, ActorModule, CriticModule, AcEmbed
 
 
 class PTPolicy:
-    def __init__(
-        self, cnnlstm_lr, critic_lr, actor_lr, alpha_lr,
-        player, training, use_entropy
-    ):
+    def __init__(self, player, training, use_entropy):
         # device
         self.device = consts.DEVICE
 
@@ -28,21 +25,25 @@ class PTPolicy:
 
         if self.training:
             # actor and ac_embed optimizers
-            self.actor_opt = optim.Adam(self.actor.parameters(), lr=1e-5)
-            self.ac_embed_opt = optim.Adam(self.ac_embed.parameters(), lr=1e-5)
+            self.actor_opt = optim.Adam(
+                self.actor.parameters(), lr=consts.ACTOR_LR
+            )
+            self.ac_embed_opt = optim.Adam(
+                self.ac_embed.parameters(), lr=consts.ACTOR_LR
+            )
 
             # init cnnlstm
             self.cnnlstm_hidden = None
             self.cnnlstm = CNNLSTM(pretrain=True).to(self.device)
             self.cnnlstm_opt = optim.Adam(
-                self.cnnlstm.parameters(), lr=cnnlstm_lr
+                self.cnnlstm.parameters(), lr=consts.CNNLSTM_LR
             )
 
             # init critic
             self.c1 = CriticModule(pretrain=True).to(self.device)
             self.c2 = CriticModule(pretrain=True).to(self.device)
-            self.c1_opt = optim.Adam(self.c1.parameters(), lr=critic_lr)
-            self.c2_opt = optim.Adam(self.c2.parameters(), lr=critic_lr)
+            self.c1_opt = optim.Adam(self.c1.parameters(), lr=consts.CRITIC_LR)
+            self.c2_opt = optim.Adam(self.c2.parameters(), lr=consts.CRITIC_LR)
 
             # target critics
             self.tc1 = copy.deepcopy(self.c1).to(self.device)
@@ -58,8 +59,12 @@ class PTPolicy:
             )
 
             if self.training:
-                self.type_alph_opt = optim.Adam([self.log_type_alph], lr=1e-4)
-                self.pos_alph_opt = optim.Adam([self.log_pos_alph], lr=1e-4)
+                self.type_alph_opt = optim.Adam(
+                    [self.log_type_alph], lr=consts.ALPHA_LR
+                )
+                self.pos_alph_opt = optim.Adam(
+                    [self.log_pos_alph], lr=consts.ALPHA_LR
+                )
                 self.type_target_entropy = 0
                 self.pos_target_entropy = -1.0
 
@@ -79,11 +84,13 @@ class PTPolicy:
 
         return ac_logits
 
-    def update_policy(self, other_policy):
+    def update_policy(self, other_policy, use_entropy):
         self.actor.load_state_dict(other_policy.actor.state_dict())
         self.ac_embed.load_state_dict(other_policy.ac_embed.state_dict())
-        self.log_type_alph = other_policy.log_type_alph
-        self.log_pos_alph = other_policy.log_type_alph
+
+        if use_entropy:
+            self.log_type_alph = other_policy.log_type_alph
+            self.log_pos_alph = other_policy.log_type_alph
 
     def update_cnnlstm_hidden(self, ob):
         ob = self.make_device_tensor(ob).unsqueeze(0).unsqueeze(0) / 255.0

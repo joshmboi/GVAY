@@ -48,6 +48,68 @@ class Logger:
 
         out.release()
 
+    def log_cnnlstm_metrics(self, cnnlstm_metrics, tot_steps):
+        self.log_scalar(
+            "CNNLSTM/Loss", cnnlstm_metrics["cnnlstm_loss"], tot_steps
+        )
+
+    def log_critic_metrics(self, c_metrics, tot_steps):
+        self.log_scalar(
+            "Critic/Loss 1", c_metrics["c1_loss"], tot_steps
+        )
+        self.log_scalar(
+            "Critic/Loss 2", c_metrics["c2_loss"], tot_steps
+        )
+        self.log_scalar(
+            "Critic/Q Value 1", c_metrics["q1_vals"], tot_steps
+        )
+        self.log_scalar(
+            "Critic/Q Value 2", c_metrics["q2_vals"], tot_steps
+        )
+
+    def log_actor_metrics(self, a_metrics, tot_steps, use_entropy):
+        self.log_scalar(
+            "Actor/Loss", a_metrics["actor_loss"], tot_steps
+        )
+
+        self.log_scalar(
+            "Position/X Mean", a_metrics["means_x"], tot_steps
+        )
+        self.log_scalar(
+            "Position/X Std", a_metrics["stds_x"], tot_steps
+        )
+        self.log_scalar(
+            "Position/Y Mean", a_metrics["means_y"], tot_steps
+        )
+        self.log_scalar(
+            "Position/Y Std", a_metrics["stds_y"], tot_steps
+        )
+
+        if use_entropy:
+            self.log_scalar(
+                "Actor/Type Entropy", a_metrics["type_entropy"], tot_steps
+            )
+            self.log_scalar(
+                "Actor/Pos Entropy", a_metrics["pos_entropy"], tot_steps
+            )
+
+            self.log_scalar(
+                "Actor/Type Alpha Value", a_metrics["type_alpha"],
+                tot_steps
+            )
+            self.log_scalar(
+                "Actor/Pos Alpha Value", a_metrics["pos_alpha"],
+                tot_steps
+            )
+            self.log_scalar(
+                "Actor/Type Alpha Loss", a_metrics["type_alpha_loss"],
+                tot_steps
+            )
+            self.log_scalar(
+                "Actor/Pos Alpha Loss", a_metrics["pos_alpha_loss"],
+                tot_steps
+            )
+
     def save_rebuff(self, rebuff, iter, pretrain=False):
         rebuff_npz = rebuff.to_numpy_dict()
         filepath = os.path.join(
