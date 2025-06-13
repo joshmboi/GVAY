@@ -33,6 +33,9 @@ class Agent:
         self.e_last_cast = -consts.SHIELD_COOL
         self.shield_val = 0
 
+        # flag for taking unavailable move
+        self.took_unavailable = 0
+
         # health n stam
         self.stam = consts.MAX_STAM
         self.health = consts.MAX_HEALTH
@@ -76,6 +79,7 @@ class Agent:
             cur_frame <= self.q_last_cast + consts.PROJ_COOL or
             self.stam < consts.PROJ_STAM
         ):
+            self.took_unavailable = 1
             return None
 
         # get projectile position and direction
@@ -101,6 +105,7 @@ class Agent:
             cur_frame <= self.w_last_cast + consts.SCORCH_COOL or
             self.stam < consts.SCORCH_STAM
         ):
+            self.took_unavailable = 1
             return None
 
         # check to see if in range of player
@@ -120,6 +125,7 @@ class Agent:
             cur_frame <= self.e_last_cast + consts.SHIELD_COOL or
             self.stam < consts.SHIELD_STAM
         ):
+            self.took_unavailable = 1
             return None
 
         shield_rad = self.rad + 4
@@ -367,6 +373,7 @@ class Agent:
             )
 
     def take_action(self, ac_idx, ac_pos, cur_frame):
+        self.took_unavailable = 0
         # grab action type and action value
         ac_val = np.array(
             [consts.MAX_X - consts.MIN_X, consts.MAX_Y - consts.MIN_Y]

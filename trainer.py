@@ -21,7 +21,7 @@ class Trainer:
 
     def train(self, max_ep_len, use_entropy, timestamp=None, last_iter=0):
         # init ac_mask and game
-        p_ac_mask = [0, 0, 1, 0, 0]
+        p_ac_mask = [1, 1, 1, 0, 0]
         e_ac_mask = [1, 0, 0, 0, 0]
         logger = Logger(name="sac", timestamp=timestamp)
 
@@ -236,5 +236,5 @@ class Trainer:
 
 
 trainer = Trainer()
-trainer.train(1080, False)
-# trainer.sim()
+# trainer.train(1080, False)
+trainer.sim()

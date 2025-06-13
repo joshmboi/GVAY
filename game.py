@@ -245,6 +245,8 @@ class Game:
         rew += e_damage_taken * 1
         rew -= p_damage_taken * 0.5
 
+        rew -= player.took_unavailable
+
         # encourage playing in the center
         # rew -= math.hypot(
         #     player.x - self.disp_w // 2, player.y - self.disp_h // 2
@@ -267,11 +269,8 @@ class Game:
             # check keys pressed
             keys = pygame.key.get_pressed()
             x, y = pygame.mouse.get_pos()
-            x = min(max(x, 60), self.disp_w - 60)
-            y = min(
-                max(y, 28 + self.player.rad),
-                self.disp_h - self.player.rad - 104
-            )
+            x = min(max(x, consts.MIN_X), consts.MAX_X)
+            y = min(max(y, consts.MIN_Y), consts.MAX_Y)
             if keys[pygame.K_SPACE]:
                 self.player.update_des(x, y)
             if keys[pygame.K_q]:
