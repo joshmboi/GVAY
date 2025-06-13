@@ -236,5 +236,5 @@ class Trainer:
 
 
 trainer = Trainer()
-# trainer.train(1080, False)
-trainer.sim()
+trainer.train(1080, False)
+# trainer.sim()
