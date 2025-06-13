@@ -35,7 +35,10 @@ class Trainer:
         if timestamp is not None:
             print(f"Loading from {timestamp} at {last_iter}...")
             print()
-            logger.load_models(p_ptpol, e_ptpol, iter=last_iter, pretrain=True)
+            logger.load_models(
+                p_ptpol, e_ptpol, iter=last_iter,
+                pretrain=True, use_entropy=use_entropy
+            )
             self.tot_steps = last_iter
             self.iters = last_iter
             rebuff = logger.load_rebuff(iter=last_iter, pretrain=True)
@@ -193,7 +196,8 @@ class Trainer:
             ):
                 print("Saving...")
                 logger.save_models(
-                    p_ptpol, e_ptpol, self.tot_steps, pretrain=True
+                    p_ptpol, e_ptpol, self.tot_steps,
+                    pretrain=True, use_entropy=use_entropy
                 )
                 logger.save_rebuff(rebuff, self.tot_steps, pretrain=True)
                 print()
